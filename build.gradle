@@ -48,3 +48,13 @@ compileKotlin {
 compileTestKotlin {
     kotlinOptions.jvmTarget = "1.8"
 }
+
+
+jar {
+    baseName 'spcore'
+    manifest {
+        attributes 'Main-Class': 'ApplicationKt'
+    }
+
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+}

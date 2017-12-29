@@ -1,7 +1,5 @@
 package exceptions
 
-class WrongSpiceCredentials(msg:String): Exception(msg)
-class LockedOutBySP(msg:String): Exception(msg)
 class DuplicateFound(msg:String): Exception(msg)
 class AlreadyFriends(msg:String): Exception(msg)
 class UserDoesntExist(msg:String): Exception(msg)

@@ -1,6 +1,6 @@
 package routes.authentication
 
-import com.github.kittinunf.fuel.Fuel
+import com.github.kittinunf.fuel.httpPost
 import database.AuthSource
 import exceptions.*
 import io.ktor.application.call
@@ -14,20 +14,12 @@ import models.User
 fun Route.auth(path: String) = route("$path/auth") {
     post("/login") {
         val form = call.receive<ValuesMap>()
-        val isAuth = try {
-            validateWithSpice(form)
-        } catch (e: WrongSpiceCredentials) {
-            call.respond(HttpStatusCode.Unauthorized, ErrorMsg("Wrong Spice Credentials",
-                    WRONG_SPICE_CRENDENTIALS))
-            null
-        } catch (e: LockedOutBySP) {
-            call.respond(HttpStatusCode.Unauthorized, ErrorMsg("Wrong Spice Credentials",
-                    LOCKED_OUT_BY_SP))
-            null
-        }
+        val isAuth = validateWithSpice(form)
 
         when (isAuth) {
-            null -> call.respond(HttpStatusCode.Unauthorized, ErrorMsg("Wrong Spice Credentials",
+            2 -> call.respond(HttpStatusCode.Unauthorized, ErrorMsg("Locked out due to too many attempts",
+                    LOCKED_OUT_BY_SP))
+            3 -> call.respond(HttpStatusCode.Unauthorized, ErrorMsg("Wrong Spice Credentials",
                     WRONG_SPICE_CRENDENTIALS))
             else -> {
                 val isUserExist = AuthSource().isUserExist(form["adminNo"].toString())
@@ -49,9 +41,7 @@ fun Route.auth(path: String) = route("$path/auth") {
         }
 
     }
-    /**
-     * TODO("Change to multipart to accept images")
-     */
+
     put("/updateUser") {
         val user = requireLogin()
         val form = call.receive<ValuesMap>()
@@ -82,23 +72,19 @@ fun Route.auth(path: String) = route("$path/auth") {
  * @return Boolean isAuth
  * @throws
  */
-fun validateWithSpice(form: ValuesMap): Boolean {
+fun validateWithSpice(form: ValuesMap): Int {
     val url = "https://mobileweb.sp.edu.sg/pkmslogin.form"
-    var isAuth = false
-    Fuel.Companion.post(url, listOf(
+    var isAuth = 0
+    val (_, response, _) = url.httpPost(listOf(
             "username" to form["adminNo"],
             "password" to form["password"],
             "login-form-type" to "pwd"
-    )).response { _, response, _ ->
-        run {
-            val resString = response.toString()
-            when {
-                resString.contains("isWebSEALError") -> throw WrongSpiceCredentials("Incorrect Password")
-                resString.contains("locked out") -> throw LockedOutBySP("Locked out")
-                resString.contains("200") -> isAuth = true
-            }
+    )).responseString()
 
-        }
+    when {
+        response.toString().contains("isWebSEALError") -> isAuth = 3
+        response.toString().contains("locked out") -> isAuth = 2
+        response.toString().contains("200") -> isAuth = 1
     }
     return isAuth
 }
