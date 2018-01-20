@@ -5,7 +5,7 @@ import models.User
 import java.sql.SQLException
 
 class AuthSource {
-    fun registerUser(user: User): Int {
+    suspend fun registerUser(user: User): Int {
         val sql = "INSERT INTO user VALUES (?,?,?,?)"
         return try {
             val conn = getDbConnection()
@@ -22,7 +22,7 @@ class AuthSource {
         }
     }
 
-    fun updateUser(user:User): Int {
+    suspend fun updateUser(user:User): Int {
         val sql = "UPDATE user SET username = ?, fullname = ?, pp = ? WHERE adminNo = ?"
         return try {
             val conn = getDbConnection()
@@ -43,7 +43,7 @@ class AuthSource {
         }
     }
 
-    fun isUserExist(adminNo: String): Boolean {
+    suspend fun isUserExist(adminNo: String): Boolean {
         val sql = "SELECT * FROM user WHERE adminNo = ?"
         return try {
             val conn = getDbConnection()
@@ -63,7 +63,7 @@ class AuthSource {
         }
     }
 
-    fun getUserById(adminNo: String): User? {
+    suspend fun getUserById(adminNo: String): User? {
         val sql = "SELECT * FROM user WHERE adminNo = ?"
         return try {
             val conn = getDbConnection()

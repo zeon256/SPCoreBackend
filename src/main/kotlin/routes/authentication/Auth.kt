@@ -72,7 +72,7 @@ fun Route.auth(path: String) = route("$path/auth") {
  * @return Boolean isAuth
  * @throws
  */
-fun validateWithSpice(form: ValuesMap): Int {
+suspend fun validateWithSpice(form: ValuesMap): Int {
     val url = "https://mobileweb.sp.edu.sg/pkmslogin.form"
     var isAuth = 0
     val (_, response, _) = url.httpPost(listOf(

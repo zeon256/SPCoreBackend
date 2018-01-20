@@ -11,7 +11,7 @@ import java.sql.SQLException
 
 class FriendSource {
 
-    fun getFriends(user:User):Friends{
+    suspend fun getFriends(user:User):Friends{
         val sql = "SELECT * FROM friend WHERE originNode = ? OR destNode = ?"
         val result = ArrayList<User>()
         try {
@@ -90,6 +90,12 @@ class FriendSource {
         }
     }
 
+    /**
+     * Inserts a friend request entry into database
+     * @param user: User
+     * @param receiverId: String
+     * @throws CannotAddSelfAsFriend if user is trying to add himself add friend
+     */
     fun insertFriendRequest(user: User, receiverId: String): Boolean {
         if(user.adminNo == receiverId)
             throw CannotAddSelfAsFriend("Cannot add self as friend")
@@ -206,6 +212,7 @@ class FriendSource {
             val ps = conn.prepareStatement(sql)
             ps.setString(1,hashOfId)
             ps.setString(2,hashOfIdSwapped)
+
             val rs = ps.executeQuery()
             val edgeExist = rs.next()
             rs.close()

@@ -30,7 +30,7 @@ object JwtConfig {
 
 data class JwtObjForFrontEnd(val token: String)
 
-fun PipelineContext<Unit, ApplicationCall>.jwtAuth() {
+suspend fun PipelineContext<Unit, ApplicationCall>.jwtAuth() {
     val token = call.request.header("Authorization")?.removePrefix("Bearer ") ?: return
     val userId = JwtConfig.parse(token)
     val user = AuthSource().getUserById(userId)

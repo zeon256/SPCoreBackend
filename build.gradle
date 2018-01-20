@@ -36,6 +36,7 @@ dependencies {
     compile "io.ktor:ktor-server-netty:$ktor_version"
     compile "io.ktor:ktor-gson:$ktor_version"
     compile 'com.github.kittinunf.fuel:fuel:1.12.0'
+    compile 'com.github.kittinunf.fuel:fuel-gson:1.12.0'
     compile "ch.qos.logback:logback-classic:1.2.1"
     compile group: "io.jsonwebtoken", name: "jjwt", version: "0.7.0"
     compile group: 'mysql', name: 'mysql-connector-java', version: '6.0.6'
