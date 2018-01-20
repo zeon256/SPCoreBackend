@@ -15,7 +15,6 @@ import kotlinx.coroutines.experimental.launch
 import kotlinx.coroutines.experimental.runBlocking
 import models.TimeTable
 import models.TimetableFromSpice
-import models.toLesson
 import java.text.SimpleDateFormat
 import java.time.LocalDate
 import java.time.YearMonth

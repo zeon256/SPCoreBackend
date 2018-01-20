@@ -63,44 +63,44 @@ data class TimetableFromSpice(val timetable: ArrayList<Module>) {
                 Gson().fromJson(content, TimetableFromSpice::class.java)
     }
 
-    data class Module(val module: LessonFromSpice)
+    data class Module(val module: LessonFromSpice) {
+        fun toLesson(dateString: String): TimeTable.Lesson? {
+            val dateFormat = SimpleDateFormat("ddMMyy HH:mm")
+            var startTimeEpoch:Long = 0
+            var endTimeEpoch:Long = 0
+            var lessonId: String = ""
+
+            if(this.module.time != null){
+                val startTimeStr = this.module.time.substring(0, 5)
+                val endTimeStr = this.module.time.substring(6, 11)
+
+                val startTimeDate = dateFormat.parse("$dateString $startTimeStr")
+                startTimeEpoch = startTimeDate.time
+
+                val endTimeDate = dateFormat.parse("$dateString $endTimeStr")
+                endTimeEpoch = endTimeDate.time
+                lessonId = Utils.md5("${this.module.location}${startTimeEpoch + endTimeEpoch}")
+            } else {
+                return null
+            }
+
+            return TimeTable.Lesson(
+                    id = lessonId,
+                    moduleCode = this.module.code,
+                    moduleName = this.module.abbr,
+                    lessonType = this.module.type,
+                    location = this.module.location,
+                    startTime = startTimeEpoch,
+                    endTime = endTimeEpoch
+            )
+        }
+    }
     data class LessonFromSpice(val abbr: String,
-                               val time: String,
+                               val time: String?,
                                val location: String,
                                val type: String,
                                val code: String)
 
-}
-
-fun TimetableFromSpice.Module.toLesson(dateString: String): TimeTable.Lesson? {
-    val dateFormat = SimpleDateFormat("ddMMyy HH:mm")
-    var startTimeEpoch:Long = 0
-    var endTimeEpoch:Long = 0
-    var lessonId: String = ""
-
-    if(this.module.time != null){
-        val startTimeStr = this.module.time.substring(0, 5)
-        val endTimeStr = this.module.time.substring(6, 11)
-
-        val startTimeDate = dateFormat.parse("$dateString $startTimeStr")
-        startTimeEpoch = startTimeDate.time
-
-        val endTimeDate = dateFormat.parse("$dateString $endTimeStr")
-        endTimeEpoch = endTimeDate.time
-        lessonId = Utils.md5("${this.module.location}${startTimeEpoch + endTimeEpoch}")
-    }else{
-        return null
-    }
-
-    return TimeTable.Lesson(
-            id = lessonId,
-            moduleCode = this.module.code,
-            moduleName = this.module.abbr,
-            lessonType = this.module.type,
-            location = this.module.location,
-            startTime = startTimeEpoch,
-            endTime = endTimeEpoch
-    )
 }
 
 fun main(args: Array<String>) {
