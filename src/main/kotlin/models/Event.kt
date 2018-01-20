@@ -78,6 +78,8 @@ fun TimetableFromSpice.Module.toLesson(dateString: String): TimeTable.Lesson? {
     var endTimeEpoch:Long = 0
     var lessonId: String = ""
 
+    //null is a must because SP server returns null for weekends
+    //and i dont want to make it a nullable field
     if(this.module.time != null){
         val startTimeStr = this.module.time.substring(0, 5)
         val endTimeStr = this.module.time.substring(6, 11)

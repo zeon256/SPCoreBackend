@@ -60,26 +60,7 @@ fun getTimeTableFromSpice() {
         val original= originalFormat.parse(temp)
         val dateStr = targetDateFormat.format(original)
 
-        // arListOfDates.add(targetDateFormat.format(original))
         val url = "http://mobileappnew.sp.edu.sg/spTimetable/source/sptt.php?DDMMYY=$dateStr&id=1626175"
-
-        /* Original Non async variation
-        val (_, response, res) =
-               url.httpPost().responseObject(TimetableFromSpice.Deserializer())
-
-
-        println(dayNo)
-
-        //this has to be reversed because SP server returns the last lesson first
-        res.get().timetable.asReversed()
-                .forEach {
-                    it.toLesson(dateStr)?.let {
-                        it1 ->
-                        arrListOfLesson.add(it1)
-                    }
-                }
-        */
-
         // Experiemental Async
         asyncResponses.add(
                 async {
