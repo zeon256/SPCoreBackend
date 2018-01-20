@@ -14,7 +14,7 @@ fun main(args: Array<String>) {
     startServer()
 }
 
-fun startServer() = embeddedServer(Netty, 8080) {
+private fun startServer() = embeddedServer(Netty, 8080) {
     install(ContentNegotiation) {
         gson { setPrettyPrinting() }
     }

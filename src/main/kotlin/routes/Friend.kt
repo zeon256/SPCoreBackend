@@ -61,23 +61,23 @@ fun Route.friend(path: String) = route("$path/friends") {
                         else -> {
                             val hasInserted = fs.insertFriendRequest(user,userExistence.adminNo)
                             if(!hasInserted)
-                                call.respond(
+                                call.respond(HttpStatusCode.BadRequest,
                                         ErrorMsg("Cannot make friend request to ${userExistence.userName}", ALREADY_FRIENDS))
                             else
                                 call.respond("Successfully requested to add ${userExistence.userName}")
                         }
                     }
                 }catch (e:SQLException){
-                    call.respond(
+                    call.respond(HttpStatusCode.BadRequest,
                             ErrorMsg("Database Error", DATABASE_ERROR))
                 }catch (e:AlreadyFriends){
-                    call.respond(
+                    call.respond(HttpStatusCode.BadRequest,
                             ErrorMsg("Already friends", ALREADY_FRIENDS))
                 }catch (e:CannotAddSelfAsFriend){
-                    call.respond(
+                    call.respond(HttpStatusCode.BadRequest,
                             ErrorMsg("Cannot add yourself as friend", CANNOT_ADD_SELF_AS_FRIEND))
                 }catch (e:PersonAlreadySentRequest){
-                    call.respond(
+                    call.respond(HttpStatusCode.BadRequest,
                             ErrorMsg("The other party already sent you a friend request", OTHER_PARTY_ALREADY_SENT_REQ))
                 }
             }
@@ -111,13 +111,13 @@ fun Route.friend(path: String) = route("$path/friends") {
                     }
 
                     if(!result)
-                        call.respond(
+                        call.respond(HttpStatusCode.BadRequest,
                                 ErrorMsg("Database Error", DATABASE_ERROR))
                     else
                         call.respond("$resString friend")
 
                 }catch (e:SQLException){
-                    call.respond(
+                    call.respond(HttpStatusCode.BadRequest,
                             ErrorMsg("Database Error", DATABASE_ERROR))
                 }
             }
