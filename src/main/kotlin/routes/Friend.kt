@@ -22,8 +22,7 @@ fun Route.friend(path: String) = route("$path/friends") {
                     val fs = FriendSource()
                     call.respond(fs.getFriends(user))
                 }catch (e:SQLException){
-                    call.respond(
-                            ErrorMsg("Database Error", DATABASE_ERROR))
+                    call.respond(ErrorMsg("Database Error", DATABASE_ERROR))
                 }
             }
         }

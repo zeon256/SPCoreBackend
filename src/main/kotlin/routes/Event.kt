@@ -6,7 +6,14 @@ import com.github.kittinunf.fuel.core.Response
 import com.github.kittinunf.fuel.gson.responseObject
 import com.github.kittinunf.fuel.httpPost
 import com.github.kittinunf.result.Result
+import database.ScheduleBlockSource
+import exceptions.ErrorMsg
+import exceptions.MISSING_JWT
+import io.ktor.application.call
+import io.ktor.http.HttpStatusCode
+import io.ktor.response.respond
 import io.ktor.routing.Route
+import io.ktor.routing.get
 import io.ktor.routing.route
 import io.ktor.util.ValuesMap
 import kotlinx.coroutines.experimental.Deferred
@@ -16,6 +23,7 @@ import kotlinx.coroutines.experimental.runBlocking
 import models.TimeTable
 import models.TimetableFromSpice
 import models.toLesson
+import routes.authentication.requireLogin
 import java.text.SimpleDateFormat
 import java.time.LocalDate
 import java.time.YearMonth
@@ -25,12 +33,25 @@ import kotlin.collections.ArrayList
 // Prevent quadruple nested generics
 private typealias FuelRRR = Triple<Request, Response, Result<TimetableFromSpice, FuelError>>
 
-fun Route.event(path: String) = route("$path/auth") {
+fun Route.event(path: String) = route("$path/event") {
+    get{
+        TODO()
+    }
 
-
-
-
-
+    get("lesson"){
+        val user = requireLogin()
+        when(user){
+            null -> call.respond(HttpStatusCode.Unauthorized, ErrorMsg("Missing JWT", MISSING_JWT))
+            else -> {
+                // who gives a shit if the server blocks us right?
+                // just spin a new instance digitalocean instance lol 
+                val source = ScheduleBlockSource()
+                val lessons = getTimeTableFromSpice(user.adminNo.substring(1,8))
+                lessons.forEach { source.insertLessons(it) }
+                call.respond(lessons)
+            }
+        }
+    }
 }
 
 /**
@@ -38,7 +59,7 @@ fun Route.event(path: String) = route("$path/auth") {
  * Afterwards, HTTP GET in a loop for the whole month and put them in a Timetable Object.
  * Which will then get send out to the frontend.
  */
-fun getTimeTableFromSpice() {
+private fun getTimeTableFromSpice(adminNo:String): ArrayList<TimeTable.Lesson> {
     val calendarInstance = Calendar.getInstance()
 
     val noOfDaysInMonth = YearMonth.of(
@@ -60,8 +81,7 @@ fun getTimeTableFromSpice() {
         val original= originalFormat.parse(temp)
         val dateStr = targetDateFormat.format(original)
 
-        val url = "http://mobileappnew.sp.edu.sg/spTimetable/source/sptt.php?DDMMYY=$dateStr&id=1626175"
-        // Experiemental Async
+        val url = "http://mobileappnew.sp.edu.sg/spTimetable/source/sptt.php?DDMMYY=$dateStr&id=$adminNo"
         asyncResponses.add(
                 async {
                     println("Async: $dateStr")
@@ -88,6 +108,5 @@ fun getTimeTableFromSpice() {
                 }
     }
 
-    println(arrListOfLesson)
-
+    return arrListOfLesson
 }

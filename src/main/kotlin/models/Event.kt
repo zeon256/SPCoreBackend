@@ -3,10 +3,7 @@ package models
 import com.github.kittinunf.fuel.core.ResponseDeserializable
 import com.google.gson.Gson
 import database.Utils
-import kotlinx.coroutines.experimental.launch
-import routes.getTimeTableFromSpice
 import java.text.SimpleDateFormat
-import java.util.*
 import kotlin.collections.ArrayList
 
 /**
@@ -103,8 +100,4 @@ fun TimetableFromSpice.Module.toLesson(dateString: String): TimeTable.Lesson? {
             startTime = startTimeEpoch,
             endTime = endTimeEpoch
     )
-}
-
-fun main(args: Array<String>) {
-    getTimeTableFromSpice()
 }

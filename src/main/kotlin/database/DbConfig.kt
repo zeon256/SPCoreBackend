@@ -5,7 +5,7 @@ import java.sql.DriverManager
 
 fun getDbConnection(): Connection {
     val jdbcDriver = "com.mysql.cj.jdbc.Driver"
-    val dbUrl= "jdbc:mysql://localhost/spcore?useLegacyDatetimeCode=false&serverTimezone=UTC"
+    val dbUrl= "jdbc:mysql://localhost/spcore?useLegacyDatetimeCode=false&serverTimezone=UTC&useSSL=false"
     val user = "root"
     val password = "12345"
 
