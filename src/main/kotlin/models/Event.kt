@@ -43,7 +43,7 @@ data class Event(override val id: String,
                  override val location: String,
                  override val startTime: Long,
                  override val endTime: Long,
-                 val creatorId: User,
+                 val creator: User,
                  val deletedInvite: ArrayList<User> = arrayListOf(),
                  val going: ArrayList<User> = arrayListOf(),
                  val notGoing: ArrayList<User> = arrayListOf()) : ScheduleBlock

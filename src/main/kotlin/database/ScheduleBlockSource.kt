@@ -1,6 +1,8 @@
 package database
 
+import exceptions.DuplicateFound
 import io.ktor.util.toLocalDateTime
+import models.Event
 import models.Filter
 import models.TimeTable
 import models.User
@@ -180,12 +182,64 @@ class ScheduleBlockSource{
     }
 
     suspend fun getEvents(){
+        TODO()
+    }
+
+    suspend fun getMyCreatedEvents(){
+        TODO()
+    }
+
+    suspend fun getEvent(eventId: String): Event?{
+        val sql = "SELECT * FROM event WHERE id = ?"
+        return try {
+            val conn = getDbConnection()
+            val ps = conn.prepareStatement(sql)
+            ps.setString(1,eventId)
+
+            val rs = ps.executeQuery()
+            var event: Event? = null
+
+            if(rs.next())
+                event = Event(rs.getString("id"),
+                        rs.getString("title"),
+                        rs.getString("location"),
+                        rs.getLong("startTime"),
+                        rs.getLong("endTime"),
+                        creator = AuthSource().getUserById(rs.getString("creatorId"))!!)
+
+            return event
+
+        }catch (e:SQLException){
+            e.printStackTrace()
+            null
+        }
+    }
+
+    //crud events
+    suspend fun createEvent(event: Event): Int{
+        val sql = "INSERT INTO event values (?,?,?,?,?,?)"
+        return try {
+            val conn = getDbConnection()
+            val ps = conn.prepareStatement(sql)
+            ps.setString(1,event.id)
+            ps.setString(2,event.title)
+            ps.setString(3,event.location)
+            ps.setLong(4,event.startTime)
+            ps.setLong(5,event.endTime)
+            ps.setString(6,event.creator.adminNo)
+            val rs = ps.executeUpdate()
+
+            ps.close()
+            conn.close()
+
+            rs
+        }catch (e: SQLException){
+            e.printStackTrace()
+            0
+        }
 
     }
 
-    suspend fun createEvent(){
-
-    }
 
     suspend fun updateEvent(){
 
@@ -193,5 +247,46 @@ class ScheduleBlockSource{
 
     suspend fun deleteEvent(){
 
+    }
+
+    // event attendance
+    suspend fun isGoing(){
+
+    }
+
+    suspend fun isNotGoing(){
+
+    }
+
+    suspend fun deletedInvite(){
+
+    }
+
+    /**
+     * When inviting people, they will be added to the "haventRespond" table
+     * Once they submit a POST request for going/notGoing/deletedInvite,
+     * those will remove the user that is in the "haventRespond" table
+     * @param user
+     * @throws SQLException
+     */
+    suspend fun invitePeople(eventId: String,invitedGuest: User): Int {
+        val sql = "INSERT INTO haventrespond values (?,?)"
+        return try {
+            val conn = getDbConnection()
+            val ps = conn.prepareStatement(sql)
+
+            ps.setString(1, eventId)
+            ps.setString(2, invitedGuest.adminNo)
+            val rs = ps.executeUpdate()
+            ps.close()
+            conn.close()
+
+            rs
+        }catch (e:SQLException){
+            e.printStackTrace()
+            if(e.printStackTrace().toString().contains("Duplicate entry"))
+                -2
+            0
+        }
     }
 }

@@ -5,22 +5,22 @@ import com.github.kittinunf.fuel.core.Request
 import com.github.kittinunf.fuel.core.Response
 import com.github.kittinunf.fuel.httpPost
 import com.github.kittinunf.result.Result
+import database.AuthSource
 import database.ScheduleBlockSource
-import exceptions.ErrorMsg
-import exceptions.MISSING_JWT
+import database.Utils
+import exceptions.*
 import io.ktor.application.call
 import io.ktor.http.HttpStatusCode
+import io.ktor.request.receive
 import io.ktor.response.respond
-import io.ktor.routing.Route
-import io.ktor.routing.get
-import io.ktor.routing.route
+import io.ktor.routing.*
+import io.ktor.util.ValuesMap
 import kotlinx.coroutines.experimental.Deferred
 import kotlinx.coroutines.experimental.async
 import kotlinx.coroutines.experimental.runBlocking
-import models.TimeTable
-import models.TimetableFromSpice
-import models.toLesson
+import models.*
 import routes.authentication.requireLogin
+import java.sql.SQLException
 import java.text.SimpleDateFormat
 import java.time.LocalDate
 import java.time.YearMonth
@@ -32,7 +32,11 @@ private typealias FuelRRR = Triple<Request, Response, Result<TimetableFromSpice,
 
 fun Route.event(path: String) = route("$path/event") {
     get {
-        TODO()
+        TODO("get events that user is part of")
+    }
+
+    get("myCreatedEvents"){
+
     }
 
     get("lesson") {
@@ -62,6 +66,102 @@ fun Route.event(path: String) = route("$path/event") {
             }
         }
     }
+
+    post {
+        val user = requireLogin()
+        val form = call.receive<ValuesMap>()
+
+        when(user){
+            null -> call.respond(HttpStatusCode.Unauthorized, ErrorMsg("Missing JWT", MISSING_JWT))
+            else -> {
+                try {
+                    val event = Event(
+                            Utils.md5(form.toString()),
+                            form["title"].toString(),
+                            form["location"].toString(),
+                            form["startTime"]!!.toLong(),
+                            form["endTime"]!!.toLong(),
+                            user)
+                    val source = ScheduleBlockSource()
+
+                    val res = source.createEvent(event)
+                    if(res == 1)
+                        call.respond(event.id)
+                    else
+                        call.respond(HttpStatusCode.BadRequest, ErrorMsg("Make sure all fields are filled in", BAD_REQUEST))
+
+                }catch (e:NullPointerException){
+                    call.respond(HttpStatusCode.BadRequest, ErrorMsg("Make sure all fields are filled in", BAD_REQUEST))
+                }catch (e:SQLException){
+                    call.respond(HttpStatusCode.BadRequest, ErrorMsg("Duplicate found", DUPLICATE_FOUND))
+                }
+            }
+        }
+    }
+
+    post("inviteGuest") {
+        val user = requireLogin()
+        val form = call.receive<ValuesMap>()
+
+        when(user){
+            null -> call.respond(HttpStatusCode.Unauthorized, ErrorMsg("Missing JWT", MISSING_JWT))
+            else -> {
+                try {
+                    val eventId = form["eventId"].toString()
+                    val userSource = AuthSource()
+                    val scheduleSource = ScheduleBlockSource()
+
+                    val invitedGuestAdminNo = form["invitedGuestAdminNo"].toUserList()
+                    val event = scheduleSource.getEvent(eventId)
+
+                    // check if event is created by user that is sending this request
+                    if(event?.creator?.adminNo != user.adminNo)
+                        call.respond(HttpStatusCode.Unauthorized, ErrorMsg("$user is not event host!", NOT_EVENT_HOST))
+                    else{
+                        val invitedGuest = ArrayList<User>()
+
+                        // Get user based on adminNumbers that are in invitedGuestAdminNo
+                        // if user adds their own adminNo it will automatically be discarded
+                        invitedGuestAdminNo?.forEach { userSource.getUserById(it)?.let {
+                            it1 -> if(it1.adminNo != user.adminNo ) invitedGuest.add(it1)
+                        } }
+
+
+                        val succesfullyInvitedGuest = ArrayList<String>()
+
+                        invitedGuest.forEach {
+                            val res = scheduleSource.invitePeople(eventId,it)
+                            if (res == 1)
+                                succesfullyInvitedGuest.add(it.adminNo)
+                        }
+
+                        call.respond("Successfully invited $succesfullyInvitedGuest")
+                    }
+
+                }catch (e: SQLException){
+                    call.respond(HttpStatusCode.BadRequest, ErrorMsg("Make sure all fields are filled in", BAD_REQUEST))
+                }
+
+
+
+            }
+        }
+    }
+
+    put {
+
+    }
+
+    delete {
+
+    }
+
+    // DeletedEvent, Going, NotGoing
+
+    post("attendance"){
+        // depending on the input -> call diff sql fn
+    }
+
 }
 
 /**
@@ -126,4 +226,11 @@ private fun getTimeTableFromSpice(adminNo: String, noOfDays: Int?): ArrayList<Ti
     }
 
     return arrListOfLesson
+}
+private fun String?.toUserList(): List<String>? = when (this.isNullOrBlank()) {
+    true -> null
+    else -> ArrayList<String>(this
+            ?.split(","))
+            .map { c: String -> c.trim() }
+            .toList()
 }
