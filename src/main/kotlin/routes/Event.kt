@@ -149,7 +149,7 @@ fun Route.event(path: String) = route("$path/event") {
                 }catch (e: SQLException){
                     call.respond(HttpStatusCode.BadRequest, ErrorMsg("Make sure all fields are filled in", BAD_REQUEST))
                 }
-                
+
             }
         }
     }
@@ -163,7 +163,6 @@ fun Route.event(path: String) = route("$path/event") {
     }
 
     // DeletedEvent, Going, NotGoing
-
     post("attendance"){
         // depending on the input -> call diff sql fn
     }

@@ -126,7 +126,6 @@ class ScheduleBlockSource{
         }
     }
 
-
     suspend fun getLessons(user:User): ArrayList<TimeTable.Lesson>{
         val sql = "SELECT * FROM lesson WHERE adminNo = ?"
         val finalRes = ArrayList<TimeTable.Lesson>()
