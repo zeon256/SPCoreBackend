@@ -261,6 +261,9 @@ class ScheduleBlockSource{
             ps.setString(6,event.creator.adminNo)
             val rs = ps.executeUpdate()
 
+            if(rs >= 1)
+                invitePeople(event.id,event.creator)
+
             ps.close()
             conn.close()
 
