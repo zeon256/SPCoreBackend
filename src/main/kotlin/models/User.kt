@@ -4,12 +4,16 @@ import io.ktor.util.AttributeKey
 
 data class User(val adminNo: String,
                 val userName: String?,
-                val fullName: String?,
-                val pp: String? = null){
+                val displayName: String?){
     companion object {
         val key = AttributeKey<User>("user")
     }
 }
+
+data class Filter(val adminNo: String,
+                  val queries: Int,
+                  val cap: Int,
+                  val updatedAt: Long)
 
 
 /**

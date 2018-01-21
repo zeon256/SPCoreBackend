@@ -6,14 +6,13 @@ import java.sql.SQLException
 
 class AuthSource {
     suspend fun registerUser(user: User): Int {
-        val sql = "INSERT INTO user VALUES (?,?,?,?)"
+        val sql = "INSERT INTO user VALUES (?,?,?)"
         return try {
             val conn = getDbConnection()
             val ps = conn.prepareStatement(sql)
             ps.setString(1, user.adminNo)
             ps.setNullIfNull(2,user.userName)
-            ps.setNullIfNull(3, user.fullName)
-            ps.setNullIfNull(4,user.pp)
+            ps.setNullIfNull(3, user.displayName)
             val rs = ps.executeUpdate()
             rs
         } catch (e: SQLException) {
@@ -23,14 +22,13 @@ class AuthSource {
     }
 
     suspend fun updateUser(user:User): Int {
-        val sql = "UPDATE user SET username = ?, fullname = ?, pp = ? WHERE adminNo = ?"
+        val sql = "UPDATE user SET username = ?, displayName = ? WHERE adminNo = ?"
         return try {
             val conn = getDbConnection()
             val ps = conn.prepareStatement(sql)
             ps.setString(1,user.userName)
-            ps.setString(2,user.fullName)
-            ps.setString(3,user.pp)
-            ps.setNullIfNull(4,user.adminNo)
+            ps.setString(2,user.displayName)
+            ps.setNullIfNull(3,user.adminNo)
             val rs = ps.executeUpdate()
             ps.close()
             conn.close()

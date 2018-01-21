@@ -16,6 +16,7 @@ import io.ktor.routing.Route
 import io.ktor.routing.get
 import io.ktor.routing.route
 import io.ktor.util.ValuesMap
+import io.ktor.util.toLocalDateTime
 import kotlinx.coroutines.experimental.Deferred
 import kotlinx.coroutines.experimental.async
 import kotlinx.coroutines.experimental.launch
@@ -34,19 +35,32 @@ import kotlin.collections.ArrayList
 private typealias FuelRRR = Triple<Request, Response, Result<TimetableFromSpice, FuelError>>
 
 fun Route.event(path: String) = route("$path/event") {
-    get{
+    get {
         TODO()
     }
 
-    get("lesson"){
+    get("lesson") {
         val user = requireLogin()
-        when(user){
+        when (user) {
             null -> call.respond(HttpStatusCode.Unauthorized, ErrorMsg("Missing JWT", MISSING_JWT))
             else -> {
-                // who gives a shit if the server blocks us right?
-                // just spin a new instance digitalocean instance lol 
                 val source = ScheduleBlockSource()
-                val lessons = getTimeTableFromSpice(user.adminNo.substring(1,8))
+                // if user is getting data for the first time, user will be added to database for filtration
+
+                // check for 5 days in the month if their schedule exist in database
+                // if 5 exist in database then read from database instead
+                // else it would get lessons from SP
+
+
+                // lessons now should now include an ArrayList of students going to the lesson
+                // so that it be be queried
+
+
+                // also there will be another table that contains the number of time the student has
+                // queried SP's server at the month to prevent spams. It should be cap to max of 5
+                // queries per month and it will reset the next month
+
+                val lessons = getTimeTableFromSpice(user.adminNo.substring(1, 8),null)
                 lessons.forEach { source.insertLessons(it) }
                 call.respond(lessons)
             }
@@ -58,17 +72,24 @@ fun Route.event(path: String) = route("$path/event") {
  * Gets the current month, and generates date in format for ddMMyy to fit SP's API.
  * Afterwards, HTTP GET in a loop for the whole month and put them in a Timetable Object.
  * Which will then get send out to the frontend.
+ * @param adminNo           eg. 1626175
+ * @param noOfDays          eg. 5 -> means first 5 days. If it is null then it calculate the whole month
  */
-private fun getTimeTableFromSpice(adminNo:String): ArrayList<TimeTable.Lesson> {
+private fun getTimeTableFromSpice(adminNo: String, noOfDays: Int?): ArrayList<TimeTable.Lesson> {
     val calendarInstance = Calendar.getInstance()
 
-    val noOfDaysInMonth = YearMonth.of(
-            calendarInstance.get(Calendar.YEAR) ,
-            calendarInstance.get(Calendar.MONTH) + 1).lengthOfMonth()
+    var noOfDaysInMonth = 0
+
+    noOfDaysInMonth = when(noOfDays){
+        null -> YearMonth.of(
+                calendarInstance.get(Calendar.YEAR),
+                calendarInstance.get(Calendar.MONTH) + 1).lengthOfMonth()
+        else -> noOfDays
+    }
+
 
     val targetDateFormat = SimpleDateFormat("ddMMyy")
     val originalFormat = SimpleDateFormat("yyyy-MM-dd")
-    val arListOfDates = ArrayList<String>()
     val arrListOfLesson = ArrayList<TimeTable.Lesson>()
     var dayNo = 1
 
@@ -78,7 +99,7 @@ private fun getTimeTableFromSpice(adminNo:String): ArrayList<TimeTable.Lesson> {
     // generates date in ddMMyy since first day of the current month to end of the month
     do {
         val temp = LocalDate.now().withDayOfMonth(dayNo).toString()
-        val original= originalFormat.parse(temp)
+        val original = originalFormat.parse(temp)
         val dateStr = targetDateFormat.format(original)
 
         val url = "http://mobileappnew.sp.edu.sg/spTimetable/source/sptt.php?DDMMYY=$dateStr&id=$adminNo"
@@ -86,11 +107,11 @@ private fun getTimeTableFromSpice(adminNo:String): ArrayList<TimeTable.Lesson> {
                 async {
                     println("Async: $dateStr")
                     Pair(url.httpPost().responseObject(TimetableFromSpice.Deserializer()),
-                         dateStr)
+                            dateStr)
                 })
 
-        dayNo ++
-    } while (dayNo-1 < noOfDaysInMonth)
+        dayNo++
+    } while (dayNo - 1 < noOfDaysInMonth)
 
     asyncResponses.forEach {
         val (fuelRRR, dateStr) =

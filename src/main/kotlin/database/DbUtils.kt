@@ -15,7 +15,7 @@ class Utils {
         fun md5(input: String) = hashString("md5",input)
 
         /**
-         * You can add on more hashing algorithm above
+         * You can add on more hashing algorithm @ DbUtils.kt
          * @param hashAlgo
          * @param input
          * @return hashedString
@@ -45,8 +45,7 @@ fun <T> PreparedStatement.setNullIfNull(parameterIndex: Int, t:T){
 fun ResultSet.toUser() = User(
         this.getString("adminNo"),
         this.getString("username"),
-        this.getString("fullname"),
-        this.getString("pp")
+        this.getString("displayName")
 )
 
 fun ResultSet.toFriendRequest() = FriendRequest(
