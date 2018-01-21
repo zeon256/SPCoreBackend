@@ -46,7 +46,8 @@ data class Event(override val id: String,
                  val creator: User,
                  val deletedInvite: ArrayList<User> = arrayListOf(),
                  val going: ArrayList<User> = arrayListOf(),
-                 val notGoing: ArrayList<User> = arrayListOf()) : ScheduleBlock
+                 val notGoing: ArrayList<User> = arrayListOf(),
+                 val haventRespond: ArrayList<User> = arrayListOf()) : ScheduleBlock
 
 /**
  * TimetableFromSpice is only 1 day! It contains lessons that

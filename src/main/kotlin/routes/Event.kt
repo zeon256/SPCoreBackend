@@ -36,7 +36,13 @@ fun Route.event(path: String) = route("$path/event") {
     }
 
     get("myCreatedEvents"){
-
+        val user = requireLogin()
+        when(user){
+            null -> call.respond(HttpStatusCode.Unauthorized, ErrorMsg("Missing JWT", MISSING_JWT))
+            else -> {
+                call.respond(ScheduleBlockSource().getMyCreatedEvents(user))
+            }
+        }
     }
 
     get("lesson") {
@@ -126,7 +132,9 @@ fun Route.event(path: String) = route("$path/event") {
                             it1 -> if(it1.adminNo != user.adminNo ) invitedGuest.add(it1)
                         } }
 
-
+                        // return guest that was successfully invited
+                        // to show that people that have been added
+                        // will not get reinvited more than once
                         val succesfullyInvitedGuest = ArrayList<String>()
 
                         invitedGuest.forEach {

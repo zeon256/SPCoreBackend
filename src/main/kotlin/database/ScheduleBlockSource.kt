@@ -185,8 +185,35 @@ class ScheduleBlockSource{
         TODO()
     }
 
-    suspend fun getMyCreatedEvents(){
-        TODO()
+    suspend fun getMyCreatedEvents(user: User): ArrayList<Event>{
+        val sql = "SELECT * FROM event where creatorId = ?"
+        val events = ArrayList<Event>()
+        return try {
+            val conn = getDbConnection()
+            val ps = conn.prepareStatement(sql)
+            ps.setString(1,user.adminNo)
+            val rs = ps.executeQuery()
+
+
+            while (rs.next()){
+                events.add(Event(rs.getString("id"),
+                        rs.getString("title"),
+                        rs.getString("location"),
+                        rs.getLong("startTime"),
+                        rs.getLong("endTime"),
+                        creator = AuthSource().getUserById(rs.getString("creatorId"))!!,
+                        deletedInvite = getIsDeletedInvite(rs.getString("id")),
+                        going = getIsNotGoing(rs.getString("id")),
+                        notGoing = getIsNotGoing(rs.getString("id")),
+                        haventRespond = getHaventRespond(rs.getString("id")))
+                )
+            }
+
+            events
+        }catch (e:SQLException){
+            e.printStackTrace()
+            events
+        }
     }
 
     suspend fun getEvent(eventId: String): Event?{
@@ -205,7 +232,12 @@ class ScheduleBlockSource{
                         rs.getString("location"),
                         rs.getLong("startTime"),
                         rs.getLong("endTime"),
-                        creator = AuthSource().getUserById(rs.getString("creatorId"))!!)
+                        creator = AuthSource().getUserById(rs.getString("creatorId"))!!,
+                        deletedInvite = getIsDeletedInvite(eventId),
+                        going = getIsNotGoing(eventId),
+                        notGoing = getIsNotGoing(eventId),
+                        haventRespond = getHaventRespond(eventId)
+                        )
 
             return event
 
@@ -240,7 +272,6 @@ class ScheduleBlockSource{
 
     }
 
-
     suspend fun updateEvent(){
 
     }
@@ -250,27 +281,99 @@ class ScheduleBlockSource{
     }
 
     // event attendance
-    suspend fun isGoing(){
-
+    private suspend fun getIsGoing(eventId: String): ArrayList<User>{
+        val sql = "SELECT * FROM eventgoing WHERE eventId= ?"
+        val users = ArrayList<User>()
+        return try {
+            val conn = getDbConnection()
+            val ps = conn.prepareStatement(sql)
+            ps.setString(1,eventId)
+            val rs = ps.executeQuery()
+            while (rs.next()){
+                users.add(AuthSource().getUserById(rs.getString("adminNo"))!!)
+            }
+            users
+        }catch (e:SQLException){
+            e.printStackTrace()
+            users
+        }
     }
 
-    suspend fun isNotGoing(){
-
+    private suspend fun getIsNotGoing(eventId: String): ArrayList<User>{
+        val sql = "SELECT * FROM eventnotgoing WHERE eventId= ?"
+        val users = ArrayList<User>()
+        return try {
+            val conn = getDbConnection()
+            val ps = conn.prepareStatement(sql)
+            ps.setString(1,eventId)
+            val rs = ps.executeQuery()
+            while (rs.next()){
+                users.add(AuthSource().getUserById(rs.getString("adminNo"))!!)
+            }
+            users
+        }catch (e:SQLException){
+            e.printStackTrace()
+            users
+        }
     }
 
-    suspend fun deletedInvite(){
+    private suspend fun getIsDeletedInvite(eventId: String): ArrayList<User>{
+        val sql = "SELECT * FROM eventdeletedinvite WHERE eventId= ?"
+        val users = ArrayList<User>()
+        return try {
+            val conn = getDbConnection()
+            val ps = conn.prepareStatement(sql)
+            ps.setString(1,eventId)
+            val rs = ps.executeQuery()
+            while (rs.next()){
+                users.add(AuthSource().getUserById(rs.getString("adminNo"))!!)
+            }
+            users
+        }catch (e:SQLException){
+            e.printStackTrace()
+            users
+        }
+    }
 
+    private suspend fun getHaventRespond(eventId: String): ArrayList<User>{
+        val sql = "SELECT * FROM eventhaventrespond WHERE eventId= ?"
+        val users = ArrayList<User>()
+        return try {
+            val conn = getDbConnection()
+            val ps = conn.prepareStatement(sql)
+            ps.setString(1,eventId)
+            val rs = ps.executeQuery()
+            while (rs.next()){
+                users.add(AuthSource().getUserById(rs.getString("adminNo"))!!)
+            }
+            users
+        }catch (e:SQLException){
+            e.printStackTrace()
+            users
+        }
+    }
+
+    suspend fun createIsGoing(){
+        TODO()
+    }
+
+    suspend fun createIsNotGoing(){
+        TODO()
+    }
+
+    suspend fun createDeletedInvite(){
+        TODO()
     }
 
     /**
-     * When inviting people, they will be added to the "haventRespond" table
+     * When inviting people, they will be added to the "eventhaventRespond" table
      * Once they submit a POST request for going/notGoing/deletedInvite,
-     * those will remove the user that is in the "haventRespond" table
+     * those will remove the user that is in the "eventhaventRespond" table
      * @param user
      * @throws SQLException
      */
     suspend fun invitePeople(eventId: String,invitedGuest: User): Int {
-        val sql = "INSERT INTO haventrespond values (?,?)"
+        val sql = "INSERT INTO eventhaventrespond values (?,?)"
         return try {
             val conn = getDbConnection()
             val ps = conn.prepareStatement(sql)
