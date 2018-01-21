@@ -15,6 +15,7 @@ fun Route.auth(path: String) = route("$path/auth") {
     post("/login") {
         val form = call.receive<ValuesMap>()
         val isAuth = validateWithSpice(form)
+        val adminNo = form["adminNo"].toString()
 
         when (isAuth) {
             2 -> call.respond(HttpStatusCode.Unauthorized, ErrorMsg("Locked out due to too many attempts",
@@ -25,15 +26,15 @@ fun Route.auth(path: String) = route("$path/auth") {
                 val isUserExist = AuthSource().isUserExist(form["adminNo"].toString())
                 if (!isUserExist) {
                     val hasRegistered = AuthSource().registerUser(
-                            User(form["adminNo"].toString(), null, null))
+                            User(adminNo, null, null))
                     if (hasRegistered == 1){
-                        val jwt = AuthSource().getUserById(form["adminNo"].toString())?.let(JwtConfig::makeToken)
+                        val jwt = AuthSource().getUserById(adminNo)?.let(JwtConfig::makeToken)
                         if(jwt != null)
                             call.respond(JwtObjForFrontEnd(jwt))
                     }
 
                 }else{
-                    val jwt = AuthSource().getUserById(form["adminNo"].toString())?.let(JwtConfig::makeToken)
+                    val jwt = AuthSource().getUserById(adminNo)?.let(JwtConfig::makeToken)
                     if(jwt != null)
                         call.respond(JwtObjForFrontEnd(jwt))
                 }

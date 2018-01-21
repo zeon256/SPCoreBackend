@@ -3,7 +3,6 @@ package routes
 import com.github.kittinunf.fuel.core.FuelError
 import com.github.kittinunf.fuel.core.Request
 import com.github.kittinunf.fuel.core.Response
-import com.github.kittinunf.fuel.gson.responseObject
 import com.github.kittinunf.fuel.httpPost
 import com.github.kittinunf.result.Result
 import database.ScheduleBlockSource
@@ -15,11 +14,8 @@ import io.ktor.response.respond
 import io.ktor.routing.Route
 import io.ktor.routing.get
 import io.ktor.routing.route
-import io.ktor.util.ValuesMap
-import io.ktor.util.toLocalDateTime
 import kotlinx.coroutines.experimental.Deferred
 import kotlinx.coroutines.experimental.async
-import kotlinx.coroutines.experimental.launch
 import kotlinx.coroutines.experimental.runBlocking
 import models.TimeTable
 import models.TimetableFromSpice
@@ -46,23 +42,23 @@ fun Route.event(path: String) = route("$path/event") {
             else -> {
                 val source = ScheduleBlockSource()
                 // if user is getting data for the first time, user will be added to database for filtration
+                val filterResults = source.checkFilter(user)
+                if(filterResults == -1)
+                    // if cap reached call from server instead
+                    call.respond(source.getLessons(user))
+                else {
+                    val lessons = getTimeTableFromSpice(user.adminNo.substring(1, 8),null)
+                    lessons.forEach { source.insertLessons(it,user) }
+                    call.respond(lessons)
+                }
 
-                // check for 5 days in the month if their schedule exist in database
-                // if 5 exist in database then read from database instead
-                // else it would get lessons from SP
-
-
-                // lessons now should now include an ArrayList of students going to the lesson
-                // so that it be be queried
-
+                // there should another table that store lesson_student
+                // which stores adminNo and hash of lesson
+                // so that lessons can be queried
 
                 // also there will be another table that contains the number of time the student has
                 // queried SP's server at the month to prevent spams. It should be cap to max of 5
                 // queries per month and it will reset the next month
-
-                val lessons = getTimeTableFromSpice(user.adminNo.substring(1, 8),null)
-                lessons.forEach { source.insertLessons(it) }
-                call.respond(lessons)
             }
         }
     }
