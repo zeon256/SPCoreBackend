@@ -9,12 +9,14 @@ import io.ktor.request.receive
 import io.ktor.response.respond
 import io.ktor.routing.*
 import io.ktor.util.ValuesMap
+import kotlinx.coroutines.experimental.delay
+import kotlinx.coroutines.experimental.runBlocking
 import models.User
 
 fun Route.auth(path: String) = route("$path/auth") {
     post("/login") {
         val form = call.receive<ValuesMap>()
-        val isAuth = validateWithSpice(form)
+        val isAuth = runBlocking { validateWithSpice(form) }
         val adminNo = form["adminNo"].toString()
 
         when (isAuth) {
@@ -76,16 +78,21 @@ fun Route.auth(path: String) = route("$path/auth") {
 suspend fun validateWithSpice(form: ValuesMap): Int {
     val url = "https://mobileweb.sp.edu.sg/pkmslogin.form"
     var isAuth = 0
-    val (_, response, _) = url.httpPost(listOf(
+    url.httpPost(listOf(
             "username" to form["adminNo"],
             "password" to form["password"],
             "login-form-type" to "pwd"
-    )).responseString()
+    )).responseString {
+        _, response, _ ->
+        isAuth = when {
+            response.headers.containsKey("Set-Cookie") -> 1
+            response.toString().contains("locked out") -> 2
+            else -> 3
 
-    when {
-        response.toString().contains("isWebSEALError") -> isAuth = 3
-        response.toString().contains("locked out") -> isAuth = 2
-        response.toString().contains("200") -> isAuth = 1
+        }
     }
+    while (isAuth == 0)
+        delay(300)
+
     return isAuth
 }
