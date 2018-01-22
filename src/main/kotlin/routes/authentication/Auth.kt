@@ -30,15 +30,17 @@ fun Route.auth(path: String) = route("$path/auth") {
                     val hasRegistered = AuthSource().registerUser(
                             User(adminNo, null, null))
                     if (hasRegistered == 1) {
-                        val jwt = AuthSource().getUserById(adminNo)?.let(JwtConfig::makeToken)
+                        val user= AuthSource().getUserById(adminNo)
+                        val jwt = user?.let(JwtConfig::makeToken)
                         if (jwt != null)
-                            call.respond(JwtObjForFrontEnd(jwt))
+                            call.respond(JwtObjForFrontEnd(jwt,user.userName,user.displayName))
                     }
 
                 } else {
-                    val jwt = AuthSource().getUserById(adminNo)?.let(JwtConfig::makeToken)
+                    val user= AuthSource().getUserById(adminNo)
+                    val jwt = user?.let(JwtConfig::makeToken)
                     if (jwt != null)
-                        call.respond(JwtObjForFrontEnd(jwt))
+                        call.respond(JwtObjForFrontEnd(jwt,user.userName,user.displayName))
                 }
             }
         }

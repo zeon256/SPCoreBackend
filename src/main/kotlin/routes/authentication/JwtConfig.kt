@@ -28,7 +28,7 @@ object JwtConfig {
             .compact()
 }
 
-data class JwtObjForFrontEnd(val token: String)
+data class JwtObjForFrontEnd(val token: String,val userName: String?, val displayName:String?)
 
 suspend fun PipelineContext<Unit, ApplicationCall>.jwtAuth() {
     val token = call.request.header("Authorization")?.removePrefix("Bearer ") ?: return
