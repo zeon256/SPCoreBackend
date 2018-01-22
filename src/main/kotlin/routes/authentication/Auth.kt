@@ -16,7 +16,7 @@ import models.User
 fun Route.auth(path: String) = route("$path/auth") {
     post("/login") {
         val form = call.receive<ValuesMap>()
-        val isAuth = validateWithSpice(form)
+        val isAuth = validateWithSp(form)
         val adminNo = form["adminNo"].toString()
 
         when (isAuth) {
@@ -75,20 +75,25 @@ fun Route.auth(path: String) = route("$path/auth") {
  * @return Boolean isAuth
  * @throws
  */
-fun validateWithSpice(form: ValuesMap): Int {
+fun validateWithSp(form: ValuesMap): Int {
     val url = "https://sso.sp.edu.sg/pkmslogin.form"
     var isAuth = 0
+    val username = form["adminNo"].toString()
+    val password = form["password"].toString()
+
     val (request, response, result) = url.httpPost(listOf(
-            "username" to form["adminNo"],
-            "password" to form["password"],
+            "username" to username,
+            "password" to password,
             "login-form-type" to "pwd"
     )).responseString()
 
     isAuth = when {
-        response.headers.containsKey("Set-Cookie") -> 1
         response.toString().contains("locked out") -> 2
+        response.toString().contains("function get(name, url){\n" +
+                "   if(name=(new RegExp('[?&]'+encodeURIComponent(name)+'=([^&]*)')).exec(url))\n" +
+                "      return decodeURIComponent(name[1]);\n" +
+                "}") -> 1
         else -> 3
-
     }
 
     return isAuth
