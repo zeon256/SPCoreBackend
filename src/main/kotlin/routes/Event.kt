@@ -155,7 +155,41 @@ fun Route.event(path: String) = route("$path/event") {
     }
 
     put {
+        val user = requireLogin()
+        val form = call.receive<ValuesMap>()
+        val eventId = form["eventId"]
 
+        when(user){
+            null -> call.respond(HttpStatusCode.Unauthorized, ErrorMsg("Missing JWT", MISSING_JWT))
+            else -> {
+                // first check if event is created by the same user
+                val source = ScheduleBlockSource()
+                if(eventId.isNullOrBlank())
+                    call.respond(HttpStatusCode.BadRequest, ErrorMsg("Event Id missing!", BAD_REQUEST))
+
+                val event = source.getEvent(eventId!!)
+
+                if(event?.creator?.adminNo != user.adminNo){
+                    call.respond(HttpStatusCode.Unauthorized, ErrorMsg("$user is not event host!", NOT_EVENT_HOST))
+                }else {
+                   val updatedEvent = Event(
+                           event.id,
+                           form["title"].toString(),
+                           form["location"].toString(),
+                           form["startTime"]!!.toLong(),
+                           form["endTime"]!!.toLong(),
+                           user
+                   )
+                    val res = source.updateEvent(updatedEvent)
+                    if(res == 0)
+                        call.respond(HttpStatusCode.BadRequest, ErrorMsg("Bad Request!", BAD_REQUEST))
+                    else
+                        call.respond("Succesfully updated ${event.id}")
+
+                }
+
+            }
+        }
     }
 
     delete {

@@ -274,8 +274,32 @@ class ScheduleBlockSource{
 
     }
 
-    suspend fun updateEvent(){
+    suspend fun updateEvent(event: Event): Int{
+        val sql = "UPDATE event SET " +
+                "title = ?, " +
+                "location = ?, " +
+                "startTime = ?, " +
+                "endTime = ? " +
+                "WHERE id = ?"
+        return try {
+            val conn = getDbConnection()
+            val ps = conn.prepareStatement(sql)
+            ps.setString(1,event.title)
+            ps.setString(2,event.location)
+            ps.setLong(3, event.startTime)
+            ps.setLong(4, event.endTime)
+            ps.setString(5, event.id)
 
+            val rs = ps.executeUpdate()
+
+            conn.close()
+            ps.close()
+
+            rs
+        }catch (e:SQLException){
+            e.printStackTrace()
+            0
+        }
     }
 
     suspend fun deleteEvent(){
