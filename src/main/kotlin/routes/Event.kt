@@ -113,37 +113,40 @@ fun Route.event(path: String) = route("$path/event") {
             null -> call.respond(HttpStatusCode.Unauthorized, ErrorMsg("Missing JWT", MISSING_JWT))
             else -> {
                 try {
-                    val eventId = form["eventId"].toString()
+                    val eventId = form["eventId"]
                     val userSource = AuthSource()
                     val scheduleSource = ScheduleBlockSource()
-
-                    val invitedGuestAdminNo = form["invitedGuestAdminNo"].toUserList()
-                    val event = scheduleSource.getEvent(eventId)
-
-                    // check if event is created by user that is sending this request
-                    if(event?.creator?.adminNo != user.adminNo)
-                        call.respond(HttpStatusCode.Unauthorized, ErrorMsg("$user is not event host!", NOT_EVENT_HOST))
+                    if(eventId.isNullOrBlank())
+                        call.respond(HttpStatusCode.BadRequest, ErrorMsg("Event Id missing!", BAD_REQUEST))
                     else{
-                        val invitedGuest = ArrayList<User>()
+                        val invitedGuestAdminNo = form["invitedGuestAdminNo"].toUserList()
+                        val event = scheduleSource.getEvent(eventId!!)
 
-                        // Get user based on adminNumbers that are in invitedGuestAdminNo
-                        // if user adds their own adminNo it will automatically be discarded
-                        invitedGuestAdminNo?.forEach { userSource.getUserById(it)?.let {
-                            it1 -> if(it1.adminNo != user.adminNo ) invitedGuest.add(it1)
-                        } }
+                        // check if event is created by user that is sending this request
+                        if(event?.creator?.adminNo != user.adminNo)
+                            call.respond(HttpStatusCode.Unauthorized, ErrorMsg("$user is not event host!", NOT_EVENT_HOST))
+                        else{
+                            val invitedGuest = ArrayList<User>()
 
-                        // return guest that was successfully invited
-                        // to show that people that have been added
-                        // will not get reinvited more than once
-                        val succesfullyInvitedGuest = ArrayList<String>()
+                            // Get user based on adminNumbers that are in invitedGuestAdminNo
+                            // if user adds their own adminNo it will automatically be discarded
+                            invitedGuestAdminNo?.forEach { userSource.getUserById(it)?.let {
+                                it1 -> if(it1.adminNo != user.adminNo ) invitedGuest.add(it1)
+                            } }
 
-                        invitedGuest.forEach {
-                            val res = scheduleSource.invitePeople(eventId,it)
-                            if (res == 1)
-                                succesfullyInvitedGuest.add(it.adminNo)
+                            // return guest that was successfully invited
+                            // to show that people that have been added
+                            // will not get reinvited more than once
+                            val succesfullyInvitedGuest = ArrayList<String>()
+
+                            invitedGuest.forEach {
+                                val res = scheduleSource.invitePeople(eventId,it)
+                                if (res == 1)
+                                    succesfullyInvitedGuest.add(it.adminNo)
+                            }
+
+                            call.respond("Successfully invited $succesfullyInvitedGuest")
                         }
-
-                        call.respond("Successfully invited $succesfullyInvitedGuest")
                     }
 
                 }catch (e: SQLException){
@@ -166,26 +169,27 @@ fun Route.event(path: String) = route("$path/event") {
                 val source = ScheduleBlockSource()
                 if(eventId.isNullOrBlank())
                     call.respond(HttpStatusCode.BadRequest, ErrorMsg("Event Id missing!", BAD_REQUEST))
+                else {
+                    val event = source.getEvent(eventId!!)
 
-                val event = source.getEvent(eventId!!)
+                    if(event?.creator?.adminNo != user.adminNo){
+                        call.respond(HttpStatusCode.Unauthorized, ErrorMsg("$user is not event host!", NOT_EVENT_HOST))
+                    }else {
+                        val updatedEvent = Event(
+                                event.id,
+                                form["title"].toString(),
+                                form["location"].toString(),
+                                form["startTime"]!!.toLong(),
+                                form["endTime"]!!.toLong(),
+                                user
+                        )
+                        val res = source.updateEvent(updatedEvent)
+                        if(res == 0)
+                            call.respond(HttpStatusCode.BadRequest, ErrorMsg("Bad Request!", BAD_REQUEST))
+                        else
+                            call.respond("Succesfully updated ${event.id}")
 
-                if(event?.creator?.adminNo != user.adminNo){
-                    call.respond(HttpStatusCode.Unauthorized, ErrorMsg("$user is not event host!", NOT_EVENT_HOST))
-                }else {
-                   val updatedEvent = Event(
-                           event.id,
-                           form["title"].toString(),
-                           form["location"].toString(),
-                           form["startTime"]!!.toLong(),
-                           form["endTime"]!!.toLong(),
-                           user
-                   )
-                    val res = source.updateEvent(updatedEvent)
-                    if(res == 0)
-                        call.respond(HttpStatusCode.BadRequest, ErrorMsg("Bad Request!", BAD_REQUEST))
-                    else
-                        call.respond("Succesfully updated ${event.id}")
-
+                    }
                 }
 
             }
@@ -193,7 +197,33 @@ fun Route.event(path: String) = route("$path/event") {
     }
 
     delete {
+        val user = requireLogin()
+        val form = call.receive<ValuesMap>()
+        val eventId = form["eventId"]
 
+        when(user){
+            null -> call.respond(HttpStatusCode.Unauthorized, ErrorMsg("Missing JWT", MISSING_JWT))
+            else -> {
+                // first check if event is created by the same user
+                val source = ScheduleBlockSource()
+                if(eventId.isNullOrBlank())
+                    call.respond(HttpStatusCode.BadRequest, ErrorMsg("Event Id missing!", BAD_REQUEST))
+                else {
+                    val event = source.getEvent(eventId!!)
+
+                    if(event?.creator?.adminNo != user.adminNo){
+                        call.respond(HttpStatusCode.Unauthorized, ErrorMsg("$user is not event host!", NOT_EVENT_HOST))
+                    }else {
+                        val res = source.deleteEvent(eventId)
+                        if(res == 0)
+                            call.respond(HttpStatusCode.BadRequest, ErrorMsg("Bad Request!", BAD_REQUEST))
+                        else
+                            call.respond("Succesfully deleted ${event.id} and all guest has been uninvited from the event.")
+
+                    }
+                }
+            }
+        }
     }
 
     // DeletedEvent, Going, NotGoing

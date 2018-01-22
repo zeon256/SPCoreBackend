@@ -302,8 +302,22 @@ class ScheduleBlockSource{
         }
     }
 
-    suspend fun deleteEvent(){
+    suspend fun deleteEvent(eventId: String): Int{
+        val sql = "DELETE FROM event WHERE id = ?"
+        return try {
+            val conn = getDbConnection()
+            val ps = conn.prepareStatement(sql)
+            ps.setString(1, eventId)
+            val rs = ps.executeUpdate()
 
+            conn.close()
+            ps.close()
+
+            rs
+        }catch (e:SQLException){
+            e.printStackTrace()
+            0
+        }
     }
 
     // event attendance
