@@ -393,16 +393,83 @@ class ScheduleBlockSource{
         }
     }
 
-    suspend fun createIsGoing(){
-        TODO()
+    suspend fun createIsGoing(user: User, eventId: String): Boolean{
+        val sql = "INSERT INTO eventgoing values (?,?)"
+        return try {
+            val conn = getDbConnection()
+            val ps = conn.prepareStatement(sql)
+            ps.setString(1,eventId)
+            ps.setString(2,user.adminNo)
+            val rs = ps.executeUpdate()
+            var rs2 = -2
+
+            if(rs == 1)
+                rs2 = removeFromHaventRespond(user,eventId)
+
+            (rs + rs2 == 2)
+        }catch (e:SQLException){
+            e.printStackTrace()
+            false
+        }
     }
 
-    suspend fun createIsNotGoing(){
-        TODO()
+    suspend fun createIsNotGoing(user:User, eventId: String): Boolean{
+        val sql = "INSERT INTO eventnotgoing values (?,?)"
+        return try {
+            val conn = getDbConnection()
+            val ps = conn.prepareStatement(sql)
+            ps.setString(1,eventId)
+            ps.setString(2,user.adminNo)
+            val rs = ps.executeUpdate()
+            var rs2 = -2
+
+            if(rs == 1)
+                rs2 = removeFromHaventRespond(user,eventId)
+
+            (rs + rs2 == 2)
+        }catch (e:SQLException){
+            e.printStackTrace()
+            false
+        }
     }
 
-    suspend fun createDeletedInvite(){
-        TODO()
+    suspend fun createDeletedInvite(user:User, eventId: String):Boolean {
+        val sql = "INSERT INTO eventdeletedinvite values (?,?)"
+        return try {
+            val conn = getDbConnection()
+            val ps = conn.prepareStatement(sql)
+            ps.setString(1,eventId)
+            ps.setString(2,user.adminNo)
+            val rs = ps.executeUpdate()
+            var rs2 = -2
+
+            if(rs == 1)
+                rs2 = removeFromHaventRespond(user,eventId)
+
+            (rs + rs2 == 2)
+        }catch (e:SQLException){
+            e.printStackTrace()
+            false
+        }
+    }
+
+    private suspend fun removeFromHaventRespond(user:User, eventId: String): Int {
+        val sql = "DELETE FROM eventhaventrespond WHERE eventId = ? AND adminNo = ?"
+        return try {
+            val conn = getDbConnection()
+            val ps = conn.prepareStatement(sql)
+            ps.setString(1,eventId)
+            ps.setString(2,user.adminNo)
+            val rs = ps.executeUpdate()
+
+            conn.close()
+            ps.close()
+
+            rs
+        }catch (e:SQLException){
+            e.printStackTrace()
+            0
+        }
     }
 
     /**

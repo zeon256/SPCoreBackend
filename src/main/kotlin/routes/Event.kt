@@ -26,6 +26,7 @@ import java.time.LocalDate
 import java.time.YearMonth
 import java.util.*
 import kotlin.collections.ArrayList
+import kotlin.collections.HashMap
 
 // Prevent quadruple nested generics
 private typealias FuelRRR = Triple<Request, Response, Result<TimetableFromSpice, FuelError>>
@@ -229,6 +230,47 @@ fun Route.event(path: String) = route("$path/event") {
     // DeletedEvent, Going, NotGoing
     post("attendance"){
         // depending on the input -> call diff sql fn
+        // -1 -> deleted invite
+        // 0 -> not going
+        // 1 -> going
+        val user = requireLogin()
+        val form = call.receive<ValuesMap>()
+        val eventId = form["eventId"].toString()
+        val attendance = form["attendance"].toString()
+
+        when(user){
+            null -> call.respond(HttpStatusCode.Unauthorized, ErrorMsg("Missing JWT", MISSING_JWT))
+            else -> {
+                if(eventId.isBlank())
+                    call.respond(HttpStatusCode.BadRequest, ErrorMsg("Event Id missing!", BAD_REQUEST))
+                else {
+                    val source = ScheduleBlockSource()
+                    var res = false
+
+
+                    // for createIsNotGoing, createIsGoing & createDeletedInvite
+                    // user has to be removed from the eventhaventrespond table
+                    when(attendance){
+                        "0" -> res = source.createIsNotGoing(user,eventId)
+                        "1" -> res = source.createIsGoing(user,eventId)
+                        "-1" -> res = source.createDeletedInvite(user,eventId)
+                        else -> call.respond(HttpStatusCode.BadRequest, ErrorMsg("Invalid event attendance code!", BAD_REQUEST))
+                    }
+                    if(res){
+                        val pair = HashMap<String,String>()
+                        pair.put("0","not going")
+                        pair.put("1","going")
+                        pair.put("-1","deleted Invite")
+
+                        call.respond("You have executed ${pair[attendance]}!")
+                    }else {
+                        call.respond(
+                                ErrorMsg("Database Error", DATABASE_ERROR))
+                    }
+                }
+            }
+        }
+
     }
 
 }
