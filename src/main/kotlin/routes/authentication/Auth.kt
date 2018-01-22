@@ -16,7 +16,7 @@ import models.User
 fun Route.auth(path: String) = route("$path/auth") {
     post("/login") {
         val form = call.receive<ValuesMap>()
-        val isAuth = runBlocking { validateWithSpice(form) }
+        val isAuth = validateWithSpice(form)
         val adminNo = form["adminNo"].toString()
 
         when (isAuth) {
@@ -29,15 +29,15 @@ fun Route.auth(path: String) = route("$path/auth") {
                 if (!isUserExist) {
                     val hasRegistered = AuthSource().registerUser(
                             User(adminNo, null, null))
-                    if (hasRegistered == 1){
+                    if (hasRegistered == 1) {
                         val jwt = AuthSource().getUserById(adminNo)?.let(JwtConfig::makeToken)
-                        if(jwt != null)
+                        if (jwt != null)
                             call.respond(JwtObjForFrontEnd(jwt))
                     }
 
-                }else{
+                } else {
                     val jwt = AuthSource().getUserById(adminNo)?.let(JwtConfig::makeToken)
-                    if(jwt != null)
+                    if (jwt != null)
                         call.respond(JwtObjForFrontEnd(jwt))
                 }
             }
@@ -57,11 +57,11 @@ fun Route.auth(path: String) = route("$path/auth") {
                                     form["username"].toString(),
                                     form["fullname"].toString()
                             ))
-                    if(hasUpdated == 1)
+                    if (hasUpdated == 1)
                         call.respond("${user.adminNo} has been updated!")
 
-                }catch (e: DuplicateFound){
-                    call.respond(HttpStatusCode.BadRequest,ErrorMsg("Username already taken!", DUPLICATE_FOUND))
+                } catch (e: DuplicateFound) {
+                    call.respond(HttpStatusCode.BadRequest, ErrorMsg("Username already taken!", DUPLICATE_FOUND))
                 }
             }
         }
@@ -75,24 +75,21 @@ fun Route.auth(path: String) = route("$path/auth") {
  * @return Boolean isAuth
  * @throws
  */
-suspend fun validateWithSpice(form: ValuesMap): Int {
-    val url = "https://mobileweb.sp.edu.sg/pkmslogin.form"
+fun validateWithSpice(form: ValuesMap): Int {
+    val url = "https://sso.sp.edu.sg/pkmslogin.form"
     var isAuth = 0
-    url.httpPost(listOf(
+    val (request, response, result) = url.httpPost(listOf(
             "username" to form["adminNo"],
             "password" to form["password"],
             "login-form-type" to "pwd"
-    )).responseString {
-        _, response, _ ->
-        isAuth = when {
-            response.headers.containsKey("Set-Cookie") -> 1
-            response.toString().contains("locked out") -> 2
-            else -> 3
+    )).responseString()
 
-        }
+    isAuth = when {
+        response.headers.containsKey("Set-Cookie") -> 1
+        response.toString().contains("locked out") -> 2
+        else -> 3
+
     }
-    while (isAuth == 0)
-        delay(300)
 
     return isAuth
 }
