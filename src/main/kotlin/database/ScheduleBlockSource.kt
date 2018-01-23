@@ -347,7 +347,7 @@ class ScheduleBlockSource {
 
     // event attendance
     fun getIsGoing(eventId: String): ArrayList<User> {
-        val sql = "SELECT * FROM eventgoing WHERE eventId= ?"
+        val sql = "SELECT * FROM eventgoing WHERE eventId = ?"
         val users = ArrayList<User>()
         return try {
             val conn = getDbConnection()
@@ -355,7 +355,7 @@ class ScheduleBlockSource {
             ps.setString(1, eventId)
             val rs = ps.executeQuery()
             while (rs.next()) {
-                users.add(AuthSource().getUserById(rs.getString("adminNo"))!!)
+                AuthSource().getUserById(rs.getString("adminNo"))?.let { users.add(it) }
             }
             users
         } catch (e: SQLException) {
@@ -419,19 +419,22 @@ class ScheduleBlockSource {
     }
 
     suspend fun createAttendance(user: User, eventId: String, response: String): Boolean {
-        val sql = "INSERT INTO ? VALUES (?,?)"
         var table = ""
         val event = getEvent(eventId)
+        table = when (response) {
+            "0" -> "eventnotgoing"
+            "1" -> "eventgoing"
+            "-1" -> "eventdeleteinvite"
+            else -> "" // this will cause SQLException
+        }
+        val sql = "INSERT INTO $table VALUES (?,?)"
         return try {
             val conn = getDbConnection()
             val ps = conn.prepareStatement(sql)
-            table = when (response) {
-                "0" -> "eventnotgoing"
-                "1" -> "eventgoing"
-                "-1" -> "eventdeleteinvite"
-                else -> "" // this will cause SQLException
-            }
-            ps.setString(3, user.adminNo)
+
+            //ps.setString(1,table)
+            ps.setString(1,eventId)
+            ps.setString(2, user.adminNo)
             val rs = ps.executeUpdate()
             var rs2 = -2
 
@@ -462,14 +465,14 @@ class ScheduleBlockSource {
     /**
      * Users are now allowed to be moved from going/notgoing/haventrespond
      */
-    private suspend fun removeFromAttendanceTable(user: User, eventId: String, table: String): Int {
-        val sql = "DELETE FROM ? WHERE eventId = ? AND adminNo = ?"
+    private fun removeFromAttendanceTable(user: User, eventId: String, table: String): Int {
+        val sql = "DELETE FROM $table WHERE eventId = ? AND adminNo = ?"
         return try {
             val conn = getDbConnection()
             val ps = conn.prepareStatement(sql)
-            ps.setString(1, table)
-            ps.setString(2, eventId)
-            ps.setString(3, user.adminNo)
+            //ps.setString(1, table)
+            ps.setString(1, eventId)
+            ps.setString(2, user.adminNo)
             val rs = ps.executeUpdate()
 
             conn.close()
@@ -504,8 +507,6 @@ class ScheduleBlockSource {
             rs
         } catch (e: SQLException) {
             e.printStackTrace()
-            if (e.printStackTrace().toString().contains("Duplicate entry"))
-                -2
             0
         }
     }
