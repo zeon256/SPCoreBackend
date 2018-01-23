@@ -156,7 +156,7 @@ class ScheduleBlockSource {
         }
     }
 
-    suspend fun insertLessons(lesson: TimeTable.Lesson, user: User): Boolean {
+    fun insertLessons(lesson: TimeTable.Lesson, user: User): Boolean {
         val sql = "INSERT IGNORE INTO lesson VALUES (?,?,?,?,?,?,?)"
 
         return try {
@@ -173,12 +173,12 @@ class ScheduleBlockSource {
             val rs = ps.executeUpdate()
 
 
-            ps.close()
             conn.close()
+            ps.close()
             var rs2 = 0
 
-            if (rs == 1)
-                rs2 = insertLessonStudent(lesson.id, user.adminNo)
+
+            rs2 = insertLessonStudent(lesson.id, user.adminNo)
 
             (rs + rs2 == 2)
         } catch (e: SQLException) {
@@ -187,7 +187,7 @@ class ScheduleBlockSource {
         }
     }
 
-    private suspend fun insertLessonStudent(lessonId: String, adminNo: String): Int {
+    private fun insertLessonStudent(lessonId: String, adminNo: String): Int {
         val sql = "INSERT INTO lessonstudents VALUES (?,?)"
         return try {
             val conn = getDbConnection()
