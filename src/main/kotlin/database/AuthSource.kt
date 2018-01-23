@@ -61,7 +61,7 @@ class AuthSource {
         }
     }
 
-    suspend fun getUserById(adminNo: String): User? {
+    fun getUserById(adminNo: String): User? {
         val sql = "SELECT * FROM user WHERE adminNo = ?"
         return try {
             val conn = getDbConnection()

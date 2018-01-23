@@ -1,5 +1,6 @@
 package database
 
+import models.Event
 import models.FriendRequest
 import models.User
 import java.security.MessageDigest
@@ -12,7 +13,7 @@ class Utils {
         fun sha512(input: String) = hashString("SHA-512", input)
         fun sha256(input: String) = hashString("SHA-256", input)
         fun sha1(input: String) = hashString("SHA-1", input)
-        fun md5(input: String) = hashString("md5",input)
+        fun md5(input: String) = hashString("md5", input)
 
         /**
          * You can add on more hashing algorithm @ DbUtils.kt
@@ -23,16 +24,17 @@ class Utils {
         private fun hashString(hashAlgo: String, input: String) =
                 MessageDigest.getInstance(hashAlgo)
                         .digest(input.toByteArray()).joinToString(separator = "") {
-                    String.format("%02X", it).toLowerCase() }
+                    String.format("%02X", it).toLowerCase()
+                }
     }
 }
 
 
-fun <T> PreparedStatement.setNullIfNull(parameterIndex: Int, t:T){
+fun <T> PreparedStatement.setNullIfNull(parameterIndex: Int, t: T) {
     when (t) {
         null -> this.setNull(parameterIndex, java.sql.Types.NULL)
         is String -> {
-            if(t.isBlank())
+            if (t.isBlank())
                 this.setString(parameterIndex, null)
             else
                 this.setString(parameterIndex, t)
@@ -53,3 +55,19 @@ fun ResultSet.toFriendRequest() = FriendRequest(
         this.getString("requestee"),
         this.getString("receiver")
 )
+
+fun ResultSet.toEvent(): Event {
+    val source = ScheduleBlockSource()
+    val eventId = this.getString("id")
+
+    return Event(eventId,
+            this.getString("title"),
+            this.getString("location"),
+            this.getLong("startTime"),
+            this.getLong("endTime"),
+            AuthSource().getUserById(this.getString("creatorId"))!!,
+            source.getIsDeletedInvite(eventId),
+            source.getIsGoing(eventId),
+            source.getIsNotGoing(eventId),
+            source.getHaventRespond(eventId))
+}

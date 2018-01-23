@@ -33,7 +33,14 @@ private typealias FuelRRR = Triple<Request, Response, Result<TimetableFromSpice,
 
 fun Route.event(path: String) = route("$path/event") {
     get {
-        TODO("get events that user is part of")
+        val user = requireLogin()
+        when(user) {
+            null -> call.respond(HttpStatusCode.Unauthorized, ErrorMsg("Missing JWT", MISSING_JWT))
+            else -> {
+                val source = ScheduleBlockSource()
+                call.respond(source.getEvents(user.adminNo))
+            }
+        }
     }
 
     get("myCreatedEvents"){
@@ -119,14 +126,14 @@ fun Route.event(path: String) = route("$path/event") {
                     val scheduleSource = ScheduleBlockSource()
                     if(eventId.isNullOrBlank())
                         call.respond(HttpStatusCode.BadRequest, ErrorMsg("Event Id missing!", BAD_REQUEST))
-                    else{
+                    else {
                         val invitedGuestAdminNo = form["invitedGuestAdminNo"].toUserList()
                         val event = scheduleSource.getEvent(eventId!!)
 
                         // check if event is created by user that is sending this request
-                        if(event?.creator?.adminNo != user.adminNo)
+                        if (event?.creator?.adminNo != user.adminNo)
                             call.respond(HttpStatusCode.Unauthorized, ErrorMsg("$user is not event host!", NOT_EVENT_HOST))
-                        else{
+                        else {
                             val invitedGuest = ArrayList<User>()
 
                             // Get user based on adminNumbers that are in invitedGuestAdminNo
@@ -246,7 +253,6 @@ fun Route.event(path: String) = route("$path/event") {
                 else {
                     val source = ScheduleBlockSource()
                     var res = false
-
 
                     // for createIsNotGoing, createIsGoing & createDeletedInvite
                     // user has to be removed from the eventhaventrespond table

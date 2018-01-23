@@ -9,8 +9,6 @@ import io.ktor.request.receive
 import io.ktor.response.respond
 import io.ktor.routing.*
 import io.ktor.util.ValuesMap
-import kotlinx.coroutines.experimental.delay
-import kotlinx.coroutines.experimental.runBlocking
 import models.User
 
 fun Route.auth(path: String) = route("$path/auth") {
@@ -57,7 +55,7 @@ fun Route.auth(path: String) = route("$path/auth") {
                     val hasUpdated = AuthSource().updateUser(
                             User(user.adminNo,
                                     form["username"].toString(),
-                                    form["fullname"].toString()
+                                    form["displayName"].toString()
                             ))
                     if (hasUpdated == 1)
                         call.respond("${user.adminNo} has been updated!")

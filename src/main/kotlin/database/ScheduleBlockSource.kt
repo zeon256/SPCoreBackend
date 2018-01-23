@@ -206,8 +206,28 @@ class ScheduleBlockSource{
         }
     }
 
-    suspend fun getEvents(){
-        TODO()
+    suspend fun getEvents(adminNo: String): ArrayList<Event>{
+        val sql = "SELECT id,title,location,startTime,endTime,creatorId " +
+                "FROM event " +
+                "LEFT JOIN eventgoing going on event.id = going.eventId " +
+                "LEFT JOIN eventhaventrespond haventres on event.id = haventres.eventId " +
+                "LEFT JOIN eventnotgoing notgoing on event.id = notgoing.eventId " +
+                "WHERE notgoing.adminNo = ? OR going.adminNo = ? OR haventres.adminNo = ?"
+        val events = ArrayList<Event>()
+        return try{
+            val conn = getDbConnection()
+            val ps = conn.prepareStatement(sql)
+            ps.setString(1,adminNo)
+            ps.setString(2,adminNo)
+            ps.setString(3,adminNo)
+            val rs = ps.executeQuery()
+            while (rs.next()){ events.add(rs.toEvent()) }
+
+            events
+        }catch (e:SQLException){
+            e.printStackTrace()
+            events
+        }
     }
 
     suspend fun getMyCreatedEvents(user: User): ArrayList<Event>{
@@ -221,17 +241,7 @@ class ScheduleBlockSource{
 
 
             while (rs.next()){
-                events.add(Event(rs.getString("id"),
-                        rs.getString("title"),
-                        rs.getString("location"),
-                        rs.getLong("startTime"),
-                        rs.getLong("endTime"),
-                        creator = AuthSource().getUserById(rs.getString("creatorId"))!!,
-                        deletedInvite = getIsDeletedInvite(rs.getString("id")),
-                        going = getIsNotGoing(rs.getString("id")),
-                        notGoing = getIsNotGoing(rs.getString("id")),
-                        haventRespond = getHaventRespond(rs.getString("id")))
-                )
+                events.add(rs.toEvent())
             }
 
             events
@@ -252,17 +262,7 @@ class ScheduleBlockSource{
             var event: Event? = null
 
             if(rs.next())
-                event = Event(rs.getString("id"),
-                        rs.getString("title"),
-                        rs.getString("location"),
-                        rs.getLong("startTime"),
-                        rs.getLong("endTime"),
-                        creator = AuthSource().getUserById(rs.getString("creatorId"))!!,
-                        deletedInvite = getIsDeletedInvite(eventId),
-                        going = getIsNotGoing(eventId),
-                        notGoing = getIsNotGoing(eventId),
-                        haventRespond = getHaventRespond(eventId)
-                        )
+                event = rs.toEvent()
 
             return event
 
@@ -347,7 +347,7 @@ class ScheduleBlockSource{
     }
 
     // event attendance
-    private suspend fun getIsGoing(eventId: String): ArrayList<User>{
+    fun getIsGoing(eventId: String): ArrayList<User>{
         val sql = "SELECT * FROM eventgoing WHERE eventId= ?"
         val users = ArrayList<User>()
         return try {
@@ -365,7 +365,7 @@ class ScheduleBlockSource{
         }
     }
 
-    private suspend fun getIsNotGoing(eventId: String): ArrayList<User>{
+    fun getIsNotGoing(eventId: String): ArrayList<User>{
         val sql = "SELECT * FROM eventnotgoing WHERE eventId= ?"
         val users = ArrayList<User>()
         return try {
@@ -383,7 +383,7 @@ class ScheduleBlockSource{
         }
     }
 
-    private suspend fun getIsDeletedInvite(eventId: String): ArrayList<User>{
+    fun getIsDeletedInvite(eventId: String): ArrayList<User>{
         val sql = "SELECT * FROM eventdeletedinvite WHERE eventId= ?"
         val users = ArrayList<User>()
         return try {
@@ -401,7 +401,7 @@ class ScheduleBlockSource{
         }
     }
 
-    private suspend fun getHaventRespond(eventId: String): ArrayList<User>{
+    fun getHaventRespond(eventId: String): ArrayList<User>{
         val sql = "SELECT * FROM eventhaventrespond WHERE eventId= ?"
         val users = ArrayList<User>()
         return try {
