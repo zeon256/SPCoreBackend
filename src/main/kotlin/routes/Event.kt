@@ -32,6 +32,7 @@ import kotlin.collections.HashMap
 private typealias FuelRRR = Triple<Request, Response, Result<TimetableFromSpice, FuelError>>
 
 fun Route.event(path: String) = route("$path/event") {
+    // get user's events
     get {
         val user = requireLogin()
         when(user) {
@@ -43,6 +44,7 @@ fun Route.event(path: String) = route("$path/event") {
         }
     }
 
+    // get events created by the user
     get("myCreatedEvents"){
         val user = requireLogin()
         when(user){
@@ -53,6 +55,7 @@ fun Route.event(path: String) = route("$path/event") {
         }
     }
 
+    // get lessons the student have
     get("lesson") {
         val user = requireLogin()
         when (user) {
@@ -81,6 +84,7 @@ fun Route.event(path: String) = route("$path/event") {
         }
     }
 
+    // create an event
     post {
         val user = requireLogin()
         val form = call.receive<ValuesMap>()
@@ -113,6 +117,7 @@ fun Route.event(path: String) = route("$path/event") {
         }
     }
 
+    // invite guest to events
     post("inviteGuest") {
         val user = requireLogin()
         val form = call.receive<ValuesMap>()
@@ -165,6 +170,7 @@ fun Route.event(path: String) = route("$path/event") {
         }
     }
 
+    // edit events
     put {
         val user = requireLogin()
         val form = call.receive<ValuesMap>()
@@ -201,9 +207,10 @@ fun Route.event(path: String) = route("$path/event") {
                 }
 
             }
-        }
     }
+        }
 
+    // delete events
     delete {
         val user = requireLogin()
         val form = call.receive<ValuesMap>()
@@ -240,6 +247,7 @@ fun Route.event(path: String) = route("$path/event") {
         // -1 -> deleted invite
         // 0 -> not going
         // 1 -> going
+
         val user = requireLogin()
         val form = call.receive<ValuesMap>()
         val eventId = form["eventId"].toString()
@@ -255,11 +263,14 @@ fun Route.event(path: String) = route("$path/event") {
                     var res = false
 
                     // for createIsNotGoing, createIsGoing & createDeletedInvite
-                    // user has to be removed from the eventhaventrespond table
+                    // user has to be removed from whatever table they are in
+                    // first check haventrespond table
+                    // second check going table
+                    // third check isNotGoing table
                     when(attendance){
-                        "0" -> res = source.createIsNotGoing(user,eventId)
-                        "1" -> res = source.createIsGoing(user,eventId)
-                        "-1" -> res = source.createDeletedInvite(user,eventId)
+                        "0" -> res = source.createAttendance(user,eventId,attendance)
+                        "1" -> res = source.createAttendance(user,eventId,attendance)
+                        "-1" -> res = source.createAttendance(user,eventId,attendance)
                         else -> call.respond(HttpStatusCode.BadRequest, ErrorMsg("Invalid event attendance code!", BAD_REQUEST))
                     }
                     if(res){

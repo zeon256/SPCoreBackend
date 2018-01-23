@@ -1,6 +1,5 @@
 package database
 
-import exceptions.DuplicateFound
 import io.ktor.util.toLocalDateTime
 import models.Event
 import models.Filter
@@ -11,50 +10,50 @@ import java.time.Instant
 import java.util.*
 import kotlin.collections.ArrayList
 
-class ScheduleBlockSource{
-    private fun filterRegistration(user: User):Int {
+class ScheduleBlockSource {
+    private fun filterRegistration(user: User): Int {
         // register user for filtering to prevent spamming of SP server
-        val sql = "INSERT ignore INTO filter values (?,?,?,?)"
+        val sql = "INSERT IGNORE INTO filter VALUES (?,?,?,?)"
         return try {
             val conn = getDbConnection()
             val ps = conn.prepareStatement(sql)
-            ps.setString(1,user.adminNo)
-            ps.setInt(2,0)
-            ps.setInt(3,5)
-            ps.setLong(4,Instant.now().toEpochMilli())
+            ps.setString(1, user.adminNo)
+            ps.setInt(2, 0)
+            ps.setInt(3, 5)
+            ps.setLong(4, Instant.now().toEpochMilli())
             val rs = ps.executeUpdate()
 
             ps.close()
             conn.close()
 
             rs
-        }catch (e: SQLException){
+        } catch (e: SQLException) {
             e.printStackTrace()
             0
         }
     }
 
-    private fun getFilter(user: User): Filter?{
+    private fun getFilter(user: User): Filter? {
         val sql = "SELECT * FROM filter WHERE adminNo = ?"
         return try {
             val conn = getDbConnection()
             val ps = conn.prepareStatement(sql)
-            ps.setString(1,user.adminNo)
+            ps.setString(1, user.adminNo)
             val rs = ps.executeQuery()
 
             var filter: Filter? = null
-            if(rs.next())
+            if (rs.next())
                 filter = Filter(rs.getString("adminNo"),
-                    rs.getInt("queries"),
-                    rs.getInt("cap"),
-                    rs.getLong("updatedAt"))
+                        rs.getInt("queries"),
+                        rs.getInt("cap"),
+                        rs.getLong("updatedAt"))
 
             rs.close()
             ps.close()
             conn.close()
 
             filter
-        }catch (e: SQLException){
+        } catch (e: SQLException) {
             e.printStackTrace()
             null
         }
@@ -69,22 +68,22 @@ class ScheduleBlockSource{
      * checkFilter is the only method that should be called by the webservice
      * @param user
      */
-    fun checkFilter(user:User): Int{
+    fun checkFilter(user: User): Int {
         val filter = getFilter(user)
-        when(filter){
+        when (filter) {
             null -> {
-                val rs=  filterRegistration(user)
+                val rs = filterRegistration(user)
                 val newFilter = getFilter(user)
-                if(newFilter != null)
-                    return updateFilter(newFilter,user)
+                if (newFilter != null)
+                    return updateFilter(newFilter, user)
             }
-            else -> return updateFilter(filter,user)
+            else -> return updateFilter(filter, user)
         }
         return 0
     }
 
-    private fun updateFilter(filter:Filter,user:User): Int{
-        val sql = "UPDATE filter set queries = ?, cap = ?, updatedAt = ? WHERE adminNo = ?"
+    private fun updateFilter(filter: Filter, user: User): Int {
+        val sql = "UPDATE filter SET queries = ?, cap = ?, updatedAt = ? WHERE adminNo = ?"
         return try {
             val conn = getDbConnection()
             val ps = conn.prepareStatement(sql)
@@ -95,10 +94,10 @@ class ScheduleBlockSource{
             val afterQuery = filter.queries + 1
 
             // if person reaches
-            if(filter.queries >= filter.cap)
+            if (filter.queries >= filter.cap)
                 return -1
 
-            if(currentDateMonth > lastUpdatedMonth){
+            if (currentDateMonth > lastUpdatedMonth) {
                 // update the cap
                 newCap = filter.cap + 5
             }
@@ -110,23 +109,23 @@ class ScheduleBlockSource{
             // else they can keep on querying till they reach a cap
             // the cap + 5 if they query the in following month
 
-            ps.setInt(1,afterQuery)
-            ps.setInt(2,newCap)
-            ps.setLong(3,Date().toInstant().toEpochMilli())
-            ps.setString(4,user.adminNo)
+            ps.setInt(1, afterQuery)
+            ps.setInt(2, newCap)
+            ps.setLong(3, Date().toInstant().toEpochMilli())
+            ps.setString(4, user.adminNo)
             val rs = ps.executeUpdate()
 
             ps.close()
             conn.close()
 
             return rs
-        }catch (e: SQLException){
+        } catch (e: SQLException) {
             e.printStackTrace()
             0
         }
     }
 
-    suspend fun getLessons(user:User): ArrayList<TimeTable.Lesson>{
+    suspend fun getLessons(user: User): ArrayList<TimeTable.Lesson> {
         val sql = "SELECT id,moduleCode,moduleName,lessonType,location,endTime,startTime\n" +
                 "FROM lesson " +
                 "JOIN lessonstudents l ON lesson.id = l.lessonId " +
@@ -136,10 +135,10 @@ class ScheduleBlockSource{
         return try {
             val conn = getDbConnection()
             val ps = conn.prepareStatement(sql)
-            ps.setString(1,user.adminNo)
-            val  rs = ps.executeQuery()
+            ps.setString(1, user.adminNo)
+            val rs = ps.executeQuery()
 
-            while(rs.next()) {
+            while (rs.next()) {
                 finalRes.add(TimeTable.Lesson(
                         rs.getString("id"),
                         rs.getString("moduleCode"),
@@ -151,26 +150,26 @@ class ScheduleBlockSource{
                 ))
             }
             finalRes
-        }catch (e:SQLException){
+        } catch (e: SQLException) {
             e.printStackTrace()
             finalRes
         }
     }
 
-    suspend fun insertLessons(lesson:TimeTable.Lesson,user: User): Boolean{
-        val sql = "INSERT IGNORE INTO lesson values (?,?,?,?,?,?,?)"
+    suspend fun insertLessons(lesson: TimeTable.Lesson, user: User): Boolean {
+        val sql = "INSERT IGNORE INTO lesson VALUES (?,?,?,?,?,?,?)"
 
         return try {
             val conn = getDbConnection()
             val ps = conn.prepareStatement(sql)
 
-            ps.setString(1,lesson.id)
-            ps.setString(2,lesson.moduleCode)
-            ps.setString(3,lesson.moduleName)
-            ps.setString(4,lesson.lessonType)
-            ps.setString(5,lesson.location)
-            ps.setLong(6,lesson.endTime)
-            ps.setLong(7,lesson.startTime)
+            ps.setString(1, lesson.id)
+            ps.setString(2, lesson.moduleCode)
+            ps.setString(3, lesson.moduleName)
+            ps.setString(4, lesson.lessonType)
+            ps.setString(5, lesson.location)
+            ps.setLong(6, lesson.endTime)
+            ps.setLong(7, lesson.startTime)
             val rs = ps.executeUpdate()
 
 
@@ -178,18 +177,18 @@ class ScheduleBlockSource{
             conn.close()
             var rs2 = 0
 
-            if(rs == 1)
-                rs2 = insertLessonStudent(lesson.id,user.adminNo)
+            if (rs == 1)
+                rs2 = insertLessonStudent(lesson.id, user.adminNo)
 
             (rs + rs2 == 2)
-        }catch (e:SQLException){
+        } catch (e: SQLException) {
             e.printStackTrace()
             false
         }
     }
 
-    private suspend fun insertLessonStudent(lessonId: String, adminNo: String) : Int {
-        val sql = "INSERT IGNORE INTO lessonstudents values (?,?)"
+    private suspend fun insertLessonStudent(lessonId: String, adminNo: String): Int {
+        val sql = "INSERT INTO lessonstudents VALUES (?,?)"
         return try {
             val conn = getDbConnection()
             val ps = conn.prepareStatement(sql)
@@ -200,13 +199,13 @@ class ScheduleBlockSource{
             ps.close()
 
             rs
-        }catch (e:SQLException){
+        } catch (e: SQLException) {
             e.printStackTrace()
             0
         }
     }
 
-    suspend fun getEvents(adminNo: String): ArrayList<Event>{
+    suspend fun getEvents(adminNo: String): ArrayList<Event> {
         val sql = "SELECT id,title,location,startTime,endTime,creatorId " +
                 "FROM event " +
                 "LEFT JOIN eventgoing going on event.id = going.eventId " +
@@ -214,93 +213,93 @@ class ScheduleBlockSource{
                 "LEFT JOIN eventnotgoing notgoing on event.id = notgoing.eventId " +
                 "WHERE notgoing.adminNo = ? OR going.adminNo = ? OR haventres.adminNo = ?"
         val events = ArrayList<Event>()
-        return try{
-            val conn = getDbConnection()
-            val ps = conn.prepareStatement(sql)
-            ps.setString(1,adminNo)
-            ps.setString(2,adminNo)
-            ps.setString(3,adminNo)
-            val rs = ps.executeQuery()
-            while (rs.next()){ events.add(rs.toEvent()) }
-
-            events
-        }catch (e:SQLException){
-            e.printStackTrace()
-            events
-        }
-    }
-
-    suspend fun getMyCreatedEvents(user: User): ArrayList<Event>{
-        val sql = "SELECT * FROM event where creatorId = ?"
-        val events = ArrayList<Event>()
         return try {
             val conn = getDbConnection()
             val ps = conn.prepareStatement(sql)
-            ps.setString(1,user.adminNo)
+            ps.setString(1, adminNo)
+            ps.setString(2, adminNo)
+            ps.setString(3, adminNo)
             val rs = ps.executeQuery()
-
-
-            while (rs.next()){
+            while (rs.next()) {
                 events.add(rs.toEvent())
             }
 
             events
-        }catch (e:SQLException){
+        } catch (e: SQLException) {
             e.printStackTrace()
             events
         }
     }
 
-    suspend fun getEvent(eventId: String): Event?{
+    suspend fun getMyCreatedEvents(user: User): ArrayList<Event> {
+        val sql = "SELECT * FROM event WHERE creatorId = ?"
+        val events = ArrayList<Event>()
+        return try {
+            val conn = getDbConnection()
+            val ps = conn.prepareStatement(sql)
+            ps.setString(1, user.adminNo)
+            val rs = ps.executeQuery()
+            while (rs.next()) {
+                events.add(rs.toEvent())
+            }
+
+            events
+        } catch (e: SQLException) {
+            e.printStackTrace()
+            events
+        }
+    }
+
+    suspend fun getEvent(eventId: String): Event? {
         val sql = "SELECT * FROM event WHERE id = ?"
         return try {
             val conn = getDbConnection()
             val ps = conn.prepareStatement(sql)
-            ps.setString(1,eventId)
+            ps.setString(1, eventId)
 
             val rs = ps.executeQuery()
             var event: Event? = null
 
-            if(rs.next())
+            if (rs.next())
                 event = rs.toEvent()
 
             return event
 
-        }catch (e:SQLException){
+        } catch (e: SQLException) {
             e.printStackTrace()
             null
         }
     }
 
     //crud events
-    suspend fun createEvent(event: Event): Int{
-        val sql = "INSERT INTO event values (?,?,?,?,?,?)"
+    suspend fun createEvent(event: Event): Int {
+        val sql = "INSERT INTO event VALUES (?,?,?,?,?,?)"
         return try {
             val conn = getDbConnection()
             val ps = conn.prepareStatement(sql)
-            ps.setString(1,event.id)
-            ps.setString(2,event.title)
-            ps.setString(3,event.location)
-            ps.setLong(4,event.startTime)
-            ps.setLong(5,event.endTime)
-            ps.setString(6,event.creator.adminNo)
+            ps.setString(1, event.id)
+            ps.setString(2, event.title)
+            ps.setString(3, event.location)
+            ps.setLong(4, event.startTime)
+            ps.setLong(5, event.endTime)
+            ps.setString(6, event.creator.adminNo)
             val rs = ps.executeUpdate()
 
-            if(rs >= 1)
-                invitePeople(event.id,event.creator)
+            if (rs >= 1)
+                invitePeople(event.id, event.creator)
 
             ps.close()
             conn.close()
 
             rs
-        }catch (e: SQLException){
+        } catch (e: SQLException) {
             e.printStackTrace()
             0
         }
 
     }
 
-    suspend fun updateEvent(event: Event): Int{
+    suspend fun updateEvent(event: Event): Int {
         val sql = "UPDATE event SET " +
                 "title = ?, " +
                 "location = ?, " +
@@ -310,8 +309,8 @@ class ScheduleBlockSource{
         return try {
             val conn = getDbConnection()
             val ps = conn.prepareStatement(sql)
-            ps.setString(1,event.title)
-            ps.setString(2,event.location)
+            ps.setString(1, event.title)
+            ps.setString(2, event.location)
             ps.setLong(3, event.startTime)
             ps.setLong(4, event.endTime)
             ps.setString(5, event.id)
@@ -322,13 +321,13 @@ class ScheduleBlockSource{
             ps.close()
 
             rs
-        }catch (e:SQLException){
+        } catch (e: SQLException) {
             e.printStackTrace()
             0
         }
     }
 
-    suspend fun deleteEvent(eventId: String): Int{
+    suspend fun deleteEvent(eventId: String): Int {
         val sql = "DELETE FROM event WHERE id = ?"
         return try {
             val conn = getDbConnection()
@@ -340,159 +339,144 @@ class ScheduleBlockSource{
             ps.close()
 
             rs
-        }catch (e:SQLException){
+        } catch (e: SQLException) {
             e.printStackTrace()
             0
         }
     }
 
     // event attendance
-    fun getIsGoing(eventId: String): ArrayList<User>{
+    fun getIsGoing(eventId: String): ArrayList<User> {
         val sql = "SELECT * FROM eventgoing WHERE eventId= ?"
         val users = ArrayList<User>()
         return try {
             val conn = getDbConnection()
             val ps = conn.prepareStatement(sql)
-            ps.setString(1,eventId)
+            ps.setString(1, eventId)
             val rs = ps.executeQuery()
-            while (rs.next()){
+            while (rs.next()) {
                 users.add(AuthSource().getUserById(rs.getString("adminNo"))!!)
             }
             users
-        }catch (e:SQLException){
+        } catch (e: SQLException) {
             e.printStackTrace()
             users
         }
     }
 
-    fun getIsNotGoing(eventId: String): ArrayList<User>{
+    fun getIsNotGoing(eventId: String): ArrayList<User> {
         val sql = "SELECT * FROM eventnotgoing WHERE eventId= ?"
         val users = ArrayList<User>()
         return try {
             val conn = getDbConnection()
             val ps = conn.prepareStatement(sql)
-            ps.setString(1,eventId)
+            ps.setString(1, eventId)
             val rs = ps.executeQuery()
-            while (rs.next()){
+            while (rs.next()) {
                 users.add(AuthSource().getUserById(rs.getString("adminNo"))!!)
             }
             users
-        }catch (e:SQLException){
+        } catch (e: SQLException) {
             e.printStackTrace()
             users
         }
     }
 
-    fun getIsDeletedInvite(eventId: String): ArrayList<User>{
+    fun getIsDeletedInvite(eventId: String): ArrayList<User> {
         val sql = "SELECT * FROM eventdeletedinvite WHERE eventId= ?"
         val users = ArrayList<User>()
         return try {
             val conn = getDbConnection()
             val ps = conn.prepareStatement(sql)
-            ps.setString(1,eventId)
+            ps.setString(1, eventId)
             val rs = ps.executeQuery()
-            while (rs.next()){
+            while (rs.next()) {
                 users.add(AuthSource().getUserById(rs.getString("adminNo"))!!)
             }
             users
-        }catch (e:SQLException){
+        } catch (e: SQLException) {
             e.printStackTrace()
             users
         }
     }
 
-    fun getHaventRespond(eventId: String): ArrayList<User>{
+    fun getHaventRespond(eventId: String): ArrayList<User> {
         val sql = "SELECT * FROM eventhaventrespond WHERE eventId= ?"
         val users = ArrayList<User>()
         return try {
             val conn = getDbConnection()
             val ps = conn.prepareStatement(sql)
-            ps.setString(1,eventId)
+            ps.setString(1, eventId)
             val rs = ps.executeQuery()
-            while (rs.next()){
+            while (rs.next()) {
                 users.add(AuthSource().getUserById(rs.getString("adminNo"))!!)
             }
             users
-        }catch (e:SQLException){
+        } catch (e: SQLException) {
             e.printStackTrace()
             users
         }
     }
 
-    suspend fun createIsGoing(user: User, eventId: String): Boolean{
-        val sql = "INSERT INTO eventgoing values (?,?)"
+    suspend fun createAttendance(user: User, eventId: String, response: String): Boolean {
+        val sql = "INSERT INTO ? VALUES (?,?)"
+        var table = ""
+        val event = getEvent(eventId)
         return try {
             val conn = getDbConnection()
             val ps = conn.prepareStatement(sql)
-            ps.setString(1,eventId)
-            ps.setString(2,user.adminNo)
+            table = when (response) {
+                "0" -> "eventnotgoing"
+                "1" -> "eventgoing"
+                "-1" -> "eventdeleteinvite"
+                else -> "" // this will cause SQLException
+            }
+            ps.setString(3, user.adminNo)
             val rs = ps.executeUpdate()
             var rs2 = -2
 
-            if(rs == 1)
-                rs2 = removeFromHaventRespond(user,eventId)
+            if (rs == 1) {
+                // check which attendance user is currently is
+                // eg isGoing but changed to notGoing
+                // then user has to be moved from eventgoing table
+                // to eventnotgoing
+
+                if (event != null) {
+                    rs2 = when {
+                        event.haventRespond.firstOrNull { it.adminNo == user.adminNo } != null ->
+                            removeFromAttendanceTable(user, event.id, "eventhaventrespond")
+                        event.notGoing.firstOrNull { it.adminNo == user.adminNo } != null ->
+                            removeFromAttendanceTable(user, event.id, "eventnotgoing")
+                        else -> removeFromAttendanceTable(user, event.id, "eventgoing")
+                    }
+                }
+            }
 
             (rs + rs2 == 2)
-        }catch (e:SQLException){
+        } catch (e: SQLException) {
             e.printStackTrace()
             false
         }
     }
 
-    suspend fun createIsNotGoing(user:User, eventId: String): Boolean{
-        val sql = "INSERT INTO eventnotgoing values (?,?)"
+    /**
+     * Users are now allowed to be moved from going/notgoing/haventrespond
+     */
+    private suspend fun removeFromAttendanceTable(user: User, eventId: String, table: String): Int {
+        val sql = "DELETE FROM ? WHERE eventId = ? AND adminNo = ?"
         return try {
             val conn = getDbConnection()
             val ps = conn.prepareStatement(sql)
-            ps.setString(1,eventId)
-            ps.setString(2,user.adminNo)
-            val rs = ps.executeUpdate()
-            var rs2 = -2
-
-            if(rs == 1)
-                rs2 = removeFromHaventRespond(user,eventId)
-
-            (rs + rs2 == 2)
-        }catch (e:SQLException){
-            e.printStackTrace()
-            false
-        }
-    }
-
-    suspend fun createDeletedInvite(user:User, eventId: String):Boolean {
-        val sql = "INSERT INTO eventdeletedinvite values (?,?)"
-        return try {
-            val conn = getDbConnection()
-            val ps = conn.prepareStatement(sql)
-            ps.setString(1,eventId)
-            ps.setString(2,user.adminNo)
-            val rs = ps.executeUpdate()
-            var rs2 = -2
-
-            if(rs == 1)
-                rs2 = removeFromHaventRespond(user,eventId)
-
-            (rs + rs2 == 2)
-        }catch (e:SQLException){
-            e.printStackTrace()
-            false
-        }
-    }
-
-    private suspend fun removeFromHaventRespond(user:User, eventId: String): Int {
-        val sql = "DELETE FROM eventhaventrespond WHERE eventId = ? AND adminNo = ?"
-        return try {
-            val conn = getDbConnection()
-            val ps = conn.prepareStatement(sql)
-            ps.setString(1,eventId)
-            ps.setString(2,user.adminNo)
+            ps.setString(1, table)
+            ps.setString(2, eventId)
+            ps.setString(3, user.adminNo)
             val rs = ps.executeUpdate()
 
             conn.close()
             ps.close()
 
             rs
-        }catch (e:SQLException){
+        } catch (e: SQLException) {
             e.printStackTrace()
             0
         }
@@ -505,8 +489,8 @@ class ScheduleBlockSource{
      * @param user
      * @throws SQLException
      */
-    suspend fun invitePeople(eventId: String,invitedGuest: User): Int {
-        val sql = "INSERT INTO eventhaventrespond values (?,?)"
+    suspend fun invitePeople(eventId: String, invitedGuest: User): Int {
+        val sql = "INSERT INTO eventhaventrespond VALUES (?,?)"
         return try {
             val conn = getDbConnection()
             val ps = conn.prepareStatement(sql)
@@ -518,9 +502,9 @@ class ScheduleBlockSource{
             conn.close()
 
             rs
-        }catch (e:SQLException){
+        } catch (e: SQLException) {
             e.printStackTrace()
-            if(e.printStackTrace().toString().contains("Duplicate entry"))
+            if (e.printStackTrace().toString().contains("Duplicate entry"))
                 -2
             0
         }
