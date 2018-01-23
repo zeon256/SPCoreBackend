@@ -127,7 +127,11 @@ class ScheduleBlockSource{
     }
 
     suspend fun getLessons(user:User): ArrayList<TimeTable.Lesson>{
-        val sql = "SELECT * FROM lesson WHERE adminNo = ?"
+        val sql = "SELECT id,moduleCode,moduleName,lessonType,location,endTime,startTime\n" +
+                "FROM lesson " +
+                "JOIN lessonstudents l ON lesson.id = l.lessonId " +
+                "WHERE l.adminNo = ?"
+
         val finalRes = ArrayList<TimeTable.Lesson>()
         return try {
             val conn = getDbConnection()
@@ -153,8 +157,8 @@ class ScheduleBlockSource{
         }
     }
 
-    suspend fun insertLessons(lesson:TimeTable.Lesson,user: User): Int{
-        val sql = "INSERT IGNORE INTO lesson values (?,?,?,?,?,?,?,?)"
+    suspend fun insertLessons(lesson:TimeTable.Lesson,user: User): Boolean{
+        val sql = "INSERT IGNORE INTO lesson values (?,?,?,?,?,?,?)"
 
         return try {
             val conn = getDbConnection()
@@ -167,11 +171,33 @@ class ScheduleBlockSource{
             ps.setString(5,lesson.location)
             ps.setLong(6,lesson.endTime)
             ps.setLong(7,lesson.startTime)
-            ps.setString(8,user.adminNo)
             val rs = ps.executeUpdate()
+
 
             ps.close()
             conn.close()
+            var rs2 = 0
+
+            if(rs == 1)
+                rs2 = insertLessonStudent(lesson.id,user.adminNo)
+
+            (rs + rs2 == 2)
+        }catch (e:SQLException){
+            e.printStackTrace()
+            false
+        }
+    }
+
+    private suspend fun insertLessonStudent(lessonId: String, adminNo: String) : Int {
+        val sql = "INSERT IGNORE INTO lessonstudents values (?,?)"
+        return try {
+            val conn = getDbConnection()
+            val ps = conn.prepareStatement(sql)
+            ps.setString(1, lessonId)
+            ps.setString(2, adminNo)
+            val rs = ps.executeUpdate()
+            conn.close()
+            ps.close()
 
             rs
         }catch (e:SQLException){
