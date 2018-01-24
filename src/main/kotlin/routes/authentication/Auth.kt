@@ -9,6 +9,7 @@ import io.ktor.request.receive
 import io.ktor.response.respond
 import io.ktor.routing.*
 import io.ktor.util.ValuesMap
+import models.StringResponse
 import models.User
 
 fun Route.auth(path: String) = route("$path/auth") {
@@ -58,7 +59,7 @@ fun Route.auth(path: String) = route("$path/auth") {
                                     form["displayName"].toString()
                             ))
                     if (hasUpdated == 1)
-                        call.respond("${user.adminNo} has been updated!")
+                        call.respond(StringResponse("${user.adminNo} has been updated!"))
 
                 } catch (e: DuplicateFound) {
                     call.respond(HttpStatusCode.BadRequest, ErrorMsg("Username already taken!", DUPLICATE_FOUND))
