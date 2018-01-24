@@ -172,11 +172,9 @@ class ScheduleBlockSource {
             ps.setLong(7, lesson.startTime)
             val rs = ps.executeUpdate()
 
-
             conn.close()
             ps.close()
             var rs2 = 0
-
 
             rs2 = insertLessonStudent(lesson.id, user.adminNo)
 
