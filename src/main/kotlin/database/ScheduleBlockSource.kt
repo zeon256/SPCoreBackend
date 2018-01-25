@@ -125,11 +125,13 @@ class ScheduleBlockSource {
         }
     }
 
-    suspend fun getLessons(user: User): ArrayList<TimeTable.Lesson> {
+    suspend fun getLessons(user: User, startTimestamp: Long, endTimestamp: Long): ArrayList<TimeTable.Lesson> {
         val sql = "SELECT id,moduleCode,moduleName,lessonType,location,endTime,startTime\n" +
                 "FROM lesson " +
                 "JOIN lessonstudents l ON lesson.id = l.lessonId " +
-                "WHERE l.adminNo = ?"
+                "WHERE l.adminNo = ? AND" +
+                "lesson.startTime >= startTimestamp" +
+                "lesson.endTime <= endTimestamp"
 
         val finalRes = ArrayList<TimeTable.Lesson>()
         return try {

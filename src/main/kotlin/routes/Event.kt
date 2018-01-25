@@ -5,6 +5,7 @@ import com.github.kittinunf.fuel.core.Request
 import com.github.kittinunf.fuel.core.Response
 import com.github.kittinunf.fuel.httpPost
 import com.github.kittinunf.result.Result
+import com.spcore.helpers.*
 import database.AuthSource
 import database.ScheduleBlockSource
 import database.Utils
@@ -56,21 +57,54 @@ fun Route.event(path: String) = route("$path/event") {
     }
 
     // get lessons the student have
+    // Query params:
+    //      refresh -> true | false: whether to force refresh
+    //                  If not provided, defaults to false
+    //      start -> String: first month to get YYYYMM format
+    //      end -> String: last inclusive month to get YYYYMM format
+    //                   If not provided, only returns lessons in start month
     get("lesson") {
         val user = requireLogin()
+        val urlParams = call.parameters
+
         when (user) {
             null -> call.respond(HttpStatusCode.Unauthorized, ErrorMsg("Missing JWT", MISSING_JWT))
             else -> {
                 val source = ScheduleBlockSource()
+
+                val forceRefresh = urlParams["refresh"]?.toBoolean() ?: false
+                val startYYYYMM = urlParams["start"] ?: run {
+                    call.respond(HttpStatusCode.BadRequest, ErrorMsg("Start month not provided", BAD_REQUEST))
+                    return@get
+                }
+                val endYYYYMM = urlParams["end"] ?: startYYYYMM
+
+                val startBounds =
+                        newCalendar(startYYYYMM.substring(4).toInt(), startYYYYMM.substring(4, 6).toInt() - 1, 1)
+
+                val endBounds =
+                        newCalendar(endYYYYMM.substring(4).toInt(), endYYYYMM.substring(4, 6).toInt() - 1, 1)
+                                .apply {
+                                    set(Calendar.DAY_OF_MONTH, this.getActualMaximum(Calendar.DAY_OF_MONTH))
+                                    setTimeAsDuration(Duration(days = 1) - Duration(millis = 0.001))
+                                }
+
                 // if user is getting data for the first time, user will be added to database for filtration
                 val filterResults = source.checkFilter(user)
-                if(filterResults == -1)
+
+                if (filterResults == -1 || !forceRefresh)
                     // if cap reached call from server instead
-                    call.respond(source.getLessons(user))
+                    call.respond(source.getLessons(user, startBounds.timeInMillis, endBounds.timeInMillis))
                 else {
-                    val lessons = getTimeTableFromSpice(user.adminNo.substring(1, 8),null)
+                    val lessons =
+                            getTimeTableFromSpice(
+                                    user.adminNo.substring(1, 8),
+                                    startBounds,
+                                    endBounds)
                     lessons.forEach { source.insertLessons(it,user) }
-                    call.respond(lessons)
+                    call.respond(lessons.filter {
+                        it.startTime.toCalendar() isFrom startBounds to endBounds
+                    })
                 }
 
                 // there should another table that store lesson_student
@@ -297,34 +331,33 @@ fun Route.event(path: String) = route("$path/event") {
  * Afterwards, HTTP GET in a loop for the whole month and put them in a Timetable Object.
  * Which will then get send out to the frontend.
  * @param adminNo           eg. 1626175
- * @param noOfDays          eg. 5 -> means first 5 days. If it is null then it calculate the whole month
+ * @param startDay First day of timetable to get inclusive
+ * @param endDay   Last day of timetable to get inclusive
  */
-private fun getTimeTableFromSpice(adminNo: String, noOfDays: Int?): ArrayList<TimeTable.Lesson> {
-    val calendarInstance = Calendar.getInstance()
-
-    var noOfDaysInMonth = 0
-
-    noOfDaysInMonth = when(noOfDays){
-        null -> YearMonth.of(
-                calendarInstance.get(Calendar.YEAR),
-                calendarInstance.get(Calendar.MONTH) + 1).lengthOfMonth()
-        else -> noOfDays
-    }
-
+private fun getTimeTableFromSpice(
+        adminNo: String,
+        startDay: Calendar =
+            Calendar.getInstance().startOfDay().apply {
+                set(Calendar.DAY_OF_MONTH, 1)
+            },
+        endDay: Calendar =
+            Calendar.getInstance().startOfDay().apply {
+                set(Calendar.DAY_OF_MONTH, this.getActualMaximum(Calendar.DAY_OF_MONTH))
+            }
+): ArrayList<TimeTable.Lesson> {
 
     val targetDateFormat = SimpleDateFormat("ddMMyy")
-    val originalFormat = SimpleDateFormat("yyyy-MM-dd")
     val arrListOfLesson = ArrayList<TimeTable.Lesson>()
-    var dayNo = 1
+
+    val currDay = startDay.clone() as Calendar
 
     val asyncResponses =
             mutableListOf<Deferred<Pair<FuelRRR, String>>>()
 
     // generates date in ddMMyy since first day of the current month to end of the month
     do {
-        val temp = LocalDate.now().withDayOfMonth(dayNo).toString()
-        val original = originalFormat.parse(temp)
-        val dateStr = targetDateFormat.format(original)
+
+        val dateStr = targetDateFormat.format(currDay)
 
         val url = "http://mobileappnew.sp.edu.sg/spTimetable/source/sptt.php?DDMMYY=$dateStr&id=$adminNo"
         asyncResponses.add(
@@ -334,8 +367,8 @@ private fun getTimeTableFromSpice(adminNo: String, noOfDays: Int?): ArrayList<Ti
                             dateStr)
                 })
 
-        dayNo++
-    } while (dayNo - 1 < noOfDaysInMonth)
+        currDay.add(Calendar.DAY_OF_MONTH, 1)
+    } while ((endDay - currDay).toMillis() <= 0)
 
     asyncResponses.forEach {
         val (fuelRRR, dateStr) =
@@ -362,3 +395,9 @@ private fun String?.toUserList(): List<String>? = when (this.isNullOrBlank()) {
             .map { c: String -> c.trim() }
             .toList()
 }
+
+private fun getAcademicCalendarFromSP() : AcademicCalendar {
+    return AcademicCalendar(newCalendar(2017, 9, 16), newCalendar(2018, 2, 2))
+}
+
+private class AcademicCalendar(val startOfSem: Calendar, val endOfSem: Calendar)
