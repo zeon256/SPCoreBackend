@@ -19,6 +19,8 @@ fun Route.auth(path: String) = route("$path/auth") {
         val adminNo = form["adminNo"].toString()
         val firebaseToken = form["firebaseRegistrationToken"]
 
+
+
         when (isAuth) {
             2 -> call.respond(HttpStatusCode.Unauthorized, ErrorMsg("Locked out due to too many attempts",
                     LOCKED_OUT_BY_SP))
@@ -39,6 +41,8 @@ fun Route.auth(path: String) = route("$path/auth") {
                             val jwt = user?.let(JwtConfig::makeToken)
                             if (jwt != null)
                                 call.respond(JwtObjForFrontEnd(jwt,user.userName,user.displayName))
+                        }else{
+                            call.respond(HttpStatusCode.Unauthorized, ErrorMsg("firebaseRegistrationToken cannot be empty/null!", BAD_REQUEST))
                         }
                     }
 
@@ -49,6 +53,8 @@ fun Route.auth(path: String) = route("$path/auth") {
                         val jwt = user?.let(JwtConfig::makeToken)
                         if (jwt != null)
                             call.respond(JwtObjForFrontEnd(jwt,user.userName,user.displayName))
+                    }else{
+                        call.respond(HttpStatusCode.Unauthorized, ErrorMsg("firebaseRegistrationToken cannot be empty/null!", BAD_REQUEST))
                     }
                 }
             }
