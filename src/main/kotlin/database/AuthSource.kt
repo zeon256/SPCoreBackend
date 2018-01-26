@@ -84,7 +84,7 @@ class AuthSource {
     }
 
     fun insertDeviceId(adminNo: String,deviceId: String): Int {
-        val sql = "INSERT IGNORE INTO userdevice values (?,?)"
+        val sql = "INSERT INTO userdevice values (?,?)"
         return try {
             val conn = getDbConnection()
             val ps = conn.prepareStatement(sql)
@@ -97,6 +97,9 @@ class AuthSource {
             rs
         }catch (e:SQLException){
             e.printStackTrace()
+            if(e.toString().contains("Duplicate"))
+                return -1
+
             0
         }
     }

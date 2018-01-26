@@ -19,7 +19,10 @@ fun Route.auth(path: String) = route("$path/auth") {
         val adminNo = form["adminNo"].toString()
         val firebaseToken = form["firebaseRegistrationToken"]
 
-
+        if(firebaseToken.isNullOrBlank()){
+            call.respond(HttpStatusCode.Unauthorized, ErrorMsg("firebaseRegistrationToken missing!", FIREBASE_TOKEN_MISSING))
+            return@post
+        }
 
         when (isAuth) {
             2 -> call.respond(HttpStatusCode.Unauthorized, ErrorMsg("Locked out due to too many attempts",
@@ -27,8 +30,8 @@ fun Route.auth(path: String) = route("$path/auth") {
             3 -> call.respond(HttpStatusCode.Unauthorized, ErrorMsg("Wrong Spice Credentials",
                     WRONG_SPICE_CRENDENTIALS))
             else -> {
-                val isUserExist = AuthSource().isUserExist(form["adminNo"].toString())
                 val src = AuthSource()
+                val isUserExist = src.isUserExist(form["adminNo"].toString())
                 if (!isUserExist) {
                     // if user is not in table, insert user into table
                     val hasRegistered = src.registerUser(
@@ -37,24 +40,24 @@ fun Route.auth(path: String) = route("$path/auth") {
                     if (hasRegistered == 1) {
                         val user= src.getUserById(adminNo)
                         val insertIntoUserDeviceResult = if(user != null) firebaseToken?.let { it1 -> src.insertDeviceId(user.adminNo, it1) } else 0
-                        if(insertIntoUserDeviceResult != 0){
+                        if(insertIntoUserDeviceResult != 0 || insertIntoUserDeviceResult == -1){
                             val jwt = user?.let(JwtConfig::makeToken)
                             if (jwt != null)
                                 call.respond(JwtObjForFrontEnd(jwt,user.userName,user.displayName))
                         }else{
-                            call.respond(HttpStatusCode.Unauthorized, ErrorMsg("firebaseRegistrationToken cannot be empty/null!", BAD_REQUEST))
+                            call.respond(HttpStatusCode.Unauthorized, ErrorMsg("Internal Server Error", INTERNAL_SERVER_ERROR))
                         }
                     }
 
                 } else {
                     val user= src.getUserById(adminNo)
                     val insertIntoUserDeviceResult = if(user != null) firebaseToken?.let { it1 -> src.insertDeviceId(user.adminNo, it1) } else 0
-                    if(insertIntoUserDeviceResult != 0){
+                    if(insertIntoUserDeviceResult != 0 || insertIntoUserDeviceResult == -1){
                         val jwt = user?.let(JwtConfig::makeToken)
                         if (jwt != null)
                             call.respond(JwtObjForFrontEnd(jwt,user.userName,user.displayName))
                     }else{
-                        call.respond(HttpStatusCode.Unauthorized, ErrorMsg("firebaseRegistrationToken cannot be empty/null!", BAD_REQUEST))
+                        call.respond(HttpStatusCode.Unauthorized, ErrorMsg("Internal Server Error", INTERNAL_SERVER_ERROR))
                     }
                 }
             }
