@@ -369,7 +369,7 @@ private fun getTimeTableFromSpice(
                 })
 
         currDay.add(Calendar.DAY_OF_MONTH, 1)
-    } while ((endDay - currDay).toMillis() <= 0)
+    } while ((endDay - currDay).toMillis() >= 0)
 
     asyncResponses.forEach {
         val (fuelRRR, dateStr) =

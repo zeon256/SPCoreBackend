@@ -209,73 +209,72 @@ fun Calendar.setTimeAsDuration(duration: Duration) {
 
 /**
  * Honestly because Java datetime and calendar sucks so much
- */
-class Duration {
-    var days: Long = 0
+ */class Duration {
+    var days: Long = 0L
         private set
-    var hours: Long = 0
+    var hours: Long = 0L
         private set
-    var minutes: Long = 0
+    var minutes: Long = 0L
         private set
-    var seconds: Long = 0
+    var seconds: Long = 0L
         private set
     var millis: Double = 0.0
         private set
 
     val uncarriedDays: Double
-        get() = toMillisAccurate()/1000/60/60/24
+        get() = toMillisAccurate()/1000L/60L/60L/24L
 
     val uncarriedHours: Double
-        get() = toMillisAccurate()/1000/60/60
+        get() = toMillisAccurate()/1000L/60L/60L
 
     val uncarriedMinutes: Double
-        get() = toMillisAccurate()/1000/60
+        get() = toMillisAccurate()/1000L/60L
 
     val uncarriedSeconds: Double
-        get() = toMillisAccurate()/1000
+        get() = toMillisAccurate()/1000L
 
 
     constructor(
-            days: Long = 0,
-            hours: Long = 0,
-            minutes: Long = 0,
-            seconds: Long = 0,
+            days: Long = 0L,
+            hours: Long = 0L,
+            minutes: Long = 0L,
+            seconds: Long = 0L,
             millis: Double = 0.0
     ) {
-        this.millis = millis % 1000
-        this.seconds = seconds + millis.toInt() / 1000
+        this.millis = millis % 1000L
+        this.seconds = seconds + millis.toLong() / 1000L
 
-        this.minutes = minutes + this.seconds / 60
-        this.seconds %= 60
+        this.minutes = minutes + this.seconds / 60L
+        this.seconds %= 60L
 
-        this.hours = hours + this.minutes / 60
-        this.minutes %= 60
+        this.hours = hours + this.minutes / 60L
+        this.minutes %= 60L
 
-        this.days = days + this.hours / 24
-        this.hours %= 24
+        this.days = days + this.hours / 24L
+        this.hours %= 24L
     }
 
     fun toMillis(): Long {
-        return  millis.toInt() +
-                seconds * 1000 +
-                minutes * 1000 * 60 +
-                hours   * 1000 * 60 * 60 +
-                days    * 1000 * 60 * 60 * 24
+        return  millis.toLong() +
+                seconds * 1000L +
+                minutes * 1000L * 60L +
+                hours   * 1000L * 60L * 60L +
+                days    * 1000L * 60L * 60L * 24L
     }
 
     fun toMillisAccurate(): Double {
         return  millis +
-                seconds * 1000 +
-                minutes * 1000 * 60 +
-                hours   * 1000 * 60 * 60 +
-                days    * 1000 * 60 * 60 * 24
+                seconds * 1000L +
+                minutes * 1000L * 60L +
+                hours   * 1000L * 60L * 60L +
+                days    * 1000L * 60L * 60L * 24L
     }
 
     fun getAbsolute(): Duration {
-        return  if (this.toMillisAccurate() < 0)
-                    -this
-                else
-                    this
+        return  if (this.toMillisAccurate() < 0L)
+            -this
+        else
+            this
     }
 
     /**
@@ -284,14 +283,14 @@ class Duration {
      *
      * Or in plain english, round up.
      *
-     * Usage: `oneHour30Mins.roundUpToNearest(Duration(hours=1))` will return 2 hours
+     * Usage: `oneHour30LMins.roundUpToNearest(Duration(hours=1L))` will return 2L hours
      */
     fun roundUpToNearest(span: Duration): Duration {
         val rem = (this % span)
         return this - rem + if(rem == ZERO || this < ZERO) ZERO else span
     }
 
-    fun roundUpToNearest(days: Long = 0, hours: Long = 0, minutes: Long = 0, seconds: Long = 0, millis: Double = 0.0): Duration {
+    fun roundUpToNearest(days: Long = 0L, hours: Long = 0L, minutes: Long = 0L, seconds: Long = 0L, millis: Double = 0.0): Duration {
         val span = Duration(days, hours, minutes, seconds, millis)
         return roundUpToNearest(span)
     }
@@ -301,14 +300,14 @@ class Duration {
      *
      * Or in plain english, round down.
      *
-     * Usage: `oneHour30Mins.roundUpToNearest(Duration(hours=1))` will return 2 hours
+     * Usage: `oneHour30LMins.roundUpToNearest(Duration(hours=1L))` will return 2L hours
      */
     fun roundDownToNearest(span: Duration): Duration {
         val rem = this % span
         return this - rem - if(this < ZERO && rem != ZERO) span else ZERO
     }
 
-    fun roundDownToNearest(days: Long = 0, hours: Long = 0, minutes: Long = 0, seconds: Long = 0, millis: Double = 0.0): Duration {
+    fun roundDownToNearest(days: Long = 0L, hours: Long = 0L, minutes: Long = 0L, seconds: Long = 0L, millis: Double = 0.0): Duration {
         val span = Duration(days, hours, minutes, seconds, millis)
         return roundDownToNearest(span)
     }
@@ -319,18 +318,18 @@ class Duration {
      *
      * Or in plain english, normal standard rounding.
      *
-     * Usage: `oneHour30Mins.roundUpToNearest(Duration(hours=1))` will return 2 hours
+     * Usage: `oneHour30LMins.roundUpToNearest(Duration(hours=1L))` will return 2L hours
      *
      */
     fun roundToNearest(span: Duration): Duration {
         val abs = this.getAbsolute()
         val rem = abs % span
-        val roundUp = rem >= span / 2
+        val roundUp = rem >= span / 2.0
         val absRnd = abs - rem + if (roundUp) span else ZERO
         return if(this < ZERO) -absRnd else absRnd
     }
 
-    fun roundToNearest(days: Long = 0, hours: Long = 0, minutes: Long = 0, seconds: Long = 0, millis: Double = 0.0): Duration {
+    fun roundToNearest(days: Long = 0L, hours: Long = 0L, minutes: Long = 0L, seconds: Long = 0L, millis: Double = 0.0): Duration {
         val span = Duration(days, hours, minutes, seconds, millis)
         return roundToNearest(span)
     }
@@ -381,6 +380,7 @@ class Duration {
     }
 }
 
+
 /**
  * Provides a way to do basic addition of a timespan to a [Calendar] object
  * without killing it
@@ -413,7 +413,7 @@ operator fun Calendar.minus(duration: Duration): Calendar {
  * @returns A [Duration] representing the signed (non-absolute) difference of [this] minus [that]
  */
 operator fun Calendar.minus(that: Calendar): Duration {
-    return Duration(millis=this.timeInMillis.toDouble() - that.timeInMillis.toDouble())
+    return Duration(millis=(this.timeInMillis - that.timeInMillis).toDouble())
 }
 
 /**
