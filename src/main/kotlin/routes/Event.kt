@@ -88,9 +88,7 @@ fun Route.event(path: String) = route("$path/event") {
                                     setTimeAsDuration(Duration(days = 1) - Duration(millis = 0.001))
                                 }
 
-                val isFirstTimeQuerying = source.getFilter(user) == null
-
-                if (!forceRefresh && !isFirstTimeQuerying)
+                if (!forceRefresh)
                     // if not force refresh && not first time -> get from db
                     call.respond(source.getLessons(user, startBounds.timeInMillis, endBounds.timeInMillis))
                 else {
@@ -103,6 +101,7 @@ fun Route.event(path: String) = route("$path/event") {
                     call.respond(lessons.filter {
                         it.startTime.toCalendar() isFrom startBounds to endBounds
                     })
+
                 }
 
                 // there should another table that store lesson_student
