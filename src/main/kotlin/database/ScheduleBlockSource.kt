@@ -95,7 +95,7 @@ class ScheduleBlockSource {
         }
     }
 
-    suspend fun getEvents(adminNo: String): ArrayList<Event> {
+    fun getEvents(adminNo: String): ArrayList<Event> {
         val sql = "SELECT id,title,location,startTime,endTime,creatorId " +
                 "FROM event " +
                 "LEFT JOIN eventgoing going on event.id = going.eventId " +
@@ -121,7 +121,7 @@ class ScheduleBlockSource {
         }
     }
 
-    suspend fun getMyCreatedEvents(user: User): ArrayList<Event> {
+    fun getMyCreatedEvents(user: User): ArrayList<Event> {
         val sql = "SELECT * FROM event WHERE creatorId = ?"
         val events = ArrayList<Event>()
         return try {
@@ -140,7 +140,7 @@ class ScheduleBlockSource {
         }
     }
 
-    suspend fun getEvent(eventId: String): Event? {
+    fun getEvent(eventId: String): Event? {
         val sql = "SELECT * FROM event WHERE id = ?"
         return try {
             val conn = getDbConnection()
@@ -161,8 +161,7 @@ class ScheduleBlockSource {
         }
     }
 
-    //crud events
-    suspend fun createEvent(event: Event): Int {
+    fun createEvent(event: Event): Int {
         val sql = "INSERT INTO event VALUES (?,?,?,?,?,?)"
         return try {
             val conn = getDbConnection()
@@ -189,7 +188,7 @@ class ScheduleBlockSource {
 
     }
 
-    suspend fun updateEvent(event: Event): Int {
+    fun updateEvent(event: Event): Int {
         val sql = "UPDATE event SET " +
                 "title = ?, " +
                 "location = ?, " +
@@ -217,7 +216,7 @@ class ScheduleBlockSource {
         }
     }
 
-    suspend fun deleteEvent(eventId: String): Int {
+    fun deleteEvent(eventId: String): Int {
         val sql = "DELETE FROM event WHERE id = ?"
         return try {
             val conn = getDbConnection()
@@ -235,7 +234,6 @@ class ScheduleBlockSource {
         }
     }
 
-    // event attendance
     fun getIsGoing(eventId: String): ArrayList<User> {
         val sql = "SELECT * FROM eventgoing WHERE eventId = ?"
         val users = ArrayList<User>()
@@ -308,7 +306,19 @@ class ScheduleBlockSource {
         }
     }
 
-    suspend fun createAttendance(user: User, eventId: String, response: String): Boolean {
+    /**
+     * @param user          User Object
+     * @param eventId       EventId
+     * @param response      User response for the particular event.
+     *                      -> -1 delete invite
+     *                      -> 0 not going
+     *                      -> 1 going
+     *
+     * @return true         if successfully inserted into table & removed from previous table
+     *         false        if fail ANY operations
+     *
+     */
+    fun createAttendance(user: User, eventId: String, response: String): Boolean {
         var table = ""
         val event = getEvent(eventId)
         table = when (response) {
@@ -322,7 +332,6 @@ class ScheduleBlockSource {
             val conn = getDbConnection()
             val ps = conn.prepareStatement(sql)
 
-            //ps.setString(1,table)
             ps.setString(1,eventId)
             ps.setString(2, user.adminNo)
             val rs = ps.executeUpdate()
@@ -382,7 +391,7 @@ class ScheduleBlockSource {
      * @param user
      * @throws SQLException
      */
-    suspend fun invitePeople(eventId: String, invitedGuest: User): Int {
+    fun invitePeople(eventId: String, invitedGuest: User): Int {
         val sql = "INSERT INTO eventhaventrespond VALUES (?,?)"
         return try {
             val conn = getDbConnection()

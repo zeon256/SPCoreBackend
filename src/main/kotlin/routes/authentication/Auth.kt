@@ -17,7 +17,7 @@ fun Route.auth(path: String) = route("$path/auth") {
         val form = call.receive<ValuesMap>()
         val isAuth = validateWithSp(form)
         val adminNo = form["adminNo"].toString()
-        val firebaseToken = form["firebaseRegistrationToken"].toString()
+        val firebaseToken = form["firebaseRegistrationToken"]
 
         when (isAuth) {
             2 -> call.respond(HttpStatusCode.Unauthorized, ErrorMsg("Locked out due to too many attempts",
@@ -26,21 +26,30 @@ fun Route.auth(path: String) = route("$path/auth") {
                     WRONG_SPICE_CRENDENTIALS))
             else -> {
                 val isUserExist = AuthSource().isUserExist(form["adminNo"].toString())
+                val src = AuthSource()
                 if (!isUserExist) {
-                    val hasRegistered = AuthSource().registerUser(
+                    // if user is not in table, insert user into table
+                    val hasRegistered = src.registerUser(
                             User(adminNo, null, null))
+                    // if insertion is ok -> issue JWT
                     if (hasRegistered == 1) {
-                        val user= AuthSource().getUserById(adminNo)
+                        val user= src.getUserById(adminNo)
+                        val insertIntoUserDeviceResult = if(user != null) firebaseToken?.let { it1 -> src.insertDeviceId(user.adminNo, it1) } else 0
+                        if(insertIntoUserDeviceResult != 0){
+                            val jwt = user?.let(JwtConfig::makeToken)
+                            if (jwt != null)
+                                call.respond(JwtObjForFrontEnd(jwt,user.userName,user.displayName))
+                        }
+                    }
+
+                } else {
+                    val user= src.getUserById(adminNo)
+                    val insertIntoUserDeviceResult = if(user != null) firebaseToken?.let { it1 -> src.insertDeviceId(user.adminNo, it1) } else 0
+                    if(insertIntoUserDeviceResult != 0){
                         val jwt = user?.let(JwtConfig::makeToken)
                         if (jwt != null)
                             call.respond(JwtObjForFrontEnd(jwt,user.userName,user.displayName))
                     }
-
-                } else {
-                    val user= AuthSource().getUserById(adminNo)
-                    val jwt = user?.let(JwtConfig::makeToken)
-                    if (jwt != null)
-                        call.respond(JwtObjForFrontEnd(jwt,user.userName,user.displayName))
                 }
             }
         }
