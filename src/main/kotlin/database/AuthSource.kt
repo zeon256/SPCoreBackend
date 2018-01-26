@@ -104,5 +104,24 @@ class AuthSource {
         }
     }
 
+    fun getUserDevices(adminNo: String): ArrayList<String> {
+        val finalRes = ArrayList<String>()
+        val sql = "SELECT * FROM userdevice WHERE adminNo = ?"
+        return try {
+            val conn = getDbConnection()
+            val ps = conn.prepareStatement(sql)
+            ps.setString(1,adminNo)
 
+            val rs = ps.executeQuery()
+            while(rs.next()){
+                finalRes.add(rs.getString("deviceId"))
+            }
+
+            finalRes
+        }catch (e:SQLException){
+            e.printStackTrace()
+            finalRes
+        }
+
+    }
 }

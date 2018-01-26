@@ -2,6 +2,7 @@ package database
 
 import models.Event
 import models.FriendRequest
+import models.TimeTable
 import models.User
 import java.security.MessageDigest
 import java.sql.PreparedStatement
@@ -71,3 +72,12 @@ fun ResultSet.toEvent(): Event {
             source.getIsNotGoing(eventId),
             source.getHaventRespond(eventId))
 }
+
+fun ResultSet.toLesson(): TimeTable.Lesson = TimeTable.Lesson(id = this.getString("id"),
+        moduleCode = this.getString("moduleCode"),
+        moduleName = this.getString("moduleName"),
+        lessonType = this.getString("lessonType"),
+        location = this.getString("location"),
+        endTime = this.getLong("endTime"),
+        startTime = this.getLong("startTime"))
+

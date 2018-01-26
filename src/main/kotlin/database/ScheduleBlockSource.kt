@@ -409,4 +409,69 @@ class ScheduleBlockSource {
             0
         }
     }
+
+
+    // Notifications stuff
+
+    /**
+     * Gets lessons that are starting in 15min
+     * 15min = 900000ms
+     * WHERE clause, take
+     * @param currentTime       in Epoch ms
+     */
+    fun checkLessonStartTimeAll(currentTime:Long): ArrayList<TimeTable.Lesson>{
+        val sql = "SELECT * FROM lesson WHERE startTime = ?"
+        val lessonStartTime = currentTime + 900000L
+        val lessonsIn15Min = ArrayList<TimeTable.Lesson>()
+
+        return try {
+            val conn = getDbConnection()
+            val ps = conn.prepareStatement(sql)
+            ps.setLong(1,lessonStartTime)
+
+            val rs = ps.executeQuery()
+            while (rs.next()){
+                lessonsIn15Min.add(rs.toLesson())
+            }
+
+            lessonsIn15Min
+        }catch (e:SQLException){
+            e.printStackTrace()
+            lessonsIn15Min
+        }
+
+    }
+
+    fun getLessonStudentsByLessonId(lessonId: String): ArrayList<String>{
+        val finalRes = ArrayList<String>()
+        val sql = "SELECT ls.lessonId, ls.adminNo,ud.deviceId FROM lessonstudents ls \n" +
+                "RIGHT JOIN userdevice ud ON  ls.adminNo = ud.adminNo \n" +
+                "WHERE lessonId = ?"
+
+        return try {
+            val conn = getDbConnection()
+            val ps = conn.prepareStatement(sql)
+            ps.setString(1,lessonId)
+            val rs = ps.executeQuery()
+            while (rs.next()){
+
+            }
+
+            finalRes
+        }catch (e:SQLException){
+            e.printStackTrace()
+            finalRes
+        }
+
+
+
+    }
+
+
+}
+
+fun main(args: Array<String>) {
+    val src = ScheduleBlockSource()
+    val lessons = src.checkLessonStartTimeAll(1516941900000)
+    println(lessons)
 }
