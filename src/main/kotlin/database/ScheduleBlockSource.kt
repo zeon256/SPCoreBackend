@@ -133,6 +133,7 @@ class ScheduleBlockSource {
     }
 
     fun getLessons(user: User, startTimestamp: Long, endTimestamp: Long): ArrayList<TimeTable.Lesson> {
+
         val sql = "SELECT id,moduleCode,moduleName,lessonType,location,endTime,startTime\n" +
                 "FROM lesson " +
                 "JOIN lessonstudents l ON lesson.id = l.lessonId " +

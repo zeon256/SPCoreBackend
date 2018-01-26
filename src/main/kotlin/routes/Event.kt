@@ -18,13 +18,12 @@ import io.ktor.routing.*
 import io.ktor.util.ValuesMap
 import kotlinx.coroutines.experimental.Deferred
 import kotlinx.coroutines.experimental.async
+import kotlinx.coroutines.experimental.newFixedThreadPoolContext
 import kotlinx.coroutines.experimental.runBlocking
 import models.*
 import routes.authentication.requireLogin
 import java.sql.SQLException
 import java.text.SimpleDateFormat
-import java.time.LocalDate
-import java.time.YearMonth
 import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
@@ -363,7 +362,7 @@ private fun getTimeTableFromSpice(
 
         val url = "http://mobileappnew.sp.edu.sg/spTimetable/source/sptt.php?DDMMYY=$dateStr&id=$adminNo"
         asyncResponses.add(
-                async {
+                async(newFixedThreadPoolContext(180, "My nigga")) {
                     println("Async: $dateStr")
                     Pair(url.httpPost().responseObject(TimetableFromSpice.Deserializer()),
                             dateStr)
