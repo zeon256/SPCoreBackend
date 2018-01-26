@@ -33,7 +33,7 @@ class ScheduleBlockSource {
         }
     }
 
-    private fun getFilter(user: User): Filter? {
+    fun getFilter(user: User): Filter? {
         val sql = "SELECT * FROM filter WHERE adminNo = ?"
         return try {
             val conn = getDbConnection()

@@ -89,10 +89,12 @@ fun Route.event(path: String) = route("$path/event") {
                                     setTimeAsDuration(Duration(days = 1) - Duration(millis = 0.001))
                                 }
 
+                val isFirstTimeQuerying = source.getFilter(user) == null
+
                 // if user is getting data for the first time, user will be added to database for filtration
                 val filterResults = source.checkFilter(user)
 
-                if (filterResults == -1 || !forceRefresh)
+                if ((filterResults == -1 || !forceRefresh) && !isFirstTimeQuerying)
                     // if cap reached call from server instead
                     call.respond(source.getLessons(user, startBounds.timeInMillis, endBounds.timeInMillis))
                 else {
