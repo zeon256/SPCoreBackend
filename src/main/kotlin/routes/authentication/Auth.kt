@@ -17,6 +17,7 @@ fun Route.auth(path: String) = route("$path/auth") {
         val form = call.receive<ValuesMap>()
         val isAuth = validateWithSp(form)
         val adminNo = form["adminNo"].toString()
+        val firebaseId = form["firebaseRegistrationId"].toString()
 
         when (isAuth) {
             2 -> call.respond(HttpStatusCode.Unauthorized, ErrorMsg("Locked out due to too many attempts",

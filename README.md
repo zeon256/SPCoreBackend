@@ -1,7 +1,4 @@
 ## TODOs
 
-- [ ] getProfileDetails
-- [ ] event invite notification
-- [ ] search user for invitation if friend
-- [ ] friend request notification
-- [ ] REST API docs 
+- [ ] Lesson notification -> when time reach send json to firebase, so that user gets notification when lesson is 15 minute before it starts
+

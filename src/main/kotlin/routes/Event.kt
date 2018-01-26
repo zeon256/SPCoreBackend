@@ -90,11 +90,8 @@ fun Route.event(path: String) = route("$path/event") {
 
                 val isFirstTimeQuerying = source.getFilter(user) == null
 
-                // if user is getting data for the first time, user will be added to database for filtration
-                val filterResults = source.checkFilter(user)
-
-                if (false && (filterResults == -1 || !forceRefresh) && !isFirstTimeQuerying)
-                    // if cap reached call from server instead
+                if (!forceRefresh && !isFirstTimeQuerying)
+                    // if not force refresh && not first time -> get from db
                     call.respond(source.getLessons(user, startBounds.timeInMillis, endBounds.timeInMillis))
                 else {
                     val lessons =
@@ -360,11 +357,13 @@ private fun getTimeTableFromSpice(
 
         val dateStr = targetDateFormat.format(currDay.toDate())
 
+        val timeout = 50000 // 50s
+
         val url = "http://mobileappnew.sp.edu.sg/spTimetable/source/sptt.php?DDMMYY=$dateStr&id=$adminNo"
         asyncResponses.add(
                 async(newFixedThreadPoolContext(180, "My nigga")) {
                     println("Async: $dateStr")
-                    Pair(url.httpPost().responseObject(TimetableFromSpice.Deserializer()),
+                    Pair(url.httpPost().timeout(timeout).timeoutRead(timeout).responseObject(TimetableFromSpice.Deserializer()),
                             dateStr)
                 })
 
