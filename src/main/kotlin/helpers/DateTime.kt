@@ -194,9 +194,9 @@ infix fun Calendar.isFrom(start: Calendar): CalendarRangeBuilder {
 fun Calendar.getTimeAsDuration() : Duration {
     return Duration(
             0,
-            get(Calendar.HOUR_OF_DAY),
-            get(Calendar.MINUTE),
-            get(Calendar.SECOND),
+            get(Calendar.HOUR_OF_DAY).toLong(),
+            get(Calendar.MINUTE).toLong(),
+            get(Calendar.SECOND).toLong(),
             get(Calendar.MILLISECOND).toDouble())
 }
 
@@ -211,13 +211,13 @@ fun Calendar.setTimeAsDuration(duration: Duration) {
  * Honestly because Java datetime and calendar sucks so much
  */
 class Duration {
-    var days: Int = 0
+    var days: Long = 0
         private set
-    var hours: Int = 0
+    var hours: Long = 0
         private set
-    var minutes: Int = 0
+    var minutes: Long = 0
         private set
-    var seconds: Int = 0
+    var seconds: Long = 0
         private set
     var millis: Double = 0.0
         private set
@@ -236,10 +236,10 @@ class Duration {
 
 
     constructor(
-            days: Int = 0,
-            hours: Int = 0,
-            minutes: Int = 0,
-            seconds: Int = 0,
+            days: Long = 0,
+            hours: Long = 0,
+            minutes: Long = 0,
+            seconds: Long = 0,
             millis: Double = 0.0
     ) {
         this.millis = millis % 1000
@@ -255,7 +255,7 @@ class Duration {
         this.hours %= 24
     }
 
-    fun toMillis(): Int {
+    fun toMillis(): Long {
         return  millis.toInt() +
                 seconds * 1000 +
                 minutes * 1000 * 60 +
@@ -389,7 +389,7 @@ class Duration {
  */
 operator fun Calendar.plus(duration: Duration): Calendar {
     val newCalendar = this.clone() as Calendar
-    newCalendar.add(Calendar.MILLISECOND, duration.toMillis())
+    newCalendar.add(Calendar.MILLISECOND, duration.toMillis().toInt())
     return newCalendar
 }
 
@@ -401,7 +401,7 @@ operator fun Calendar.plus(duration: Duration): Calendar {
  */
 operator fun Calendar.minus(duration: Duration): Calendar {
     val newCalendar = this.clone() as Calendar
-    newCalendar.add(Calendar.MILLISECOND, -duration.toMillis())
+    newCalendar.add(Calendar.MILLISECOND, -duration.toMillis().toInt())
     return newCalendar
 }
 
@@ -452,4 +452,3 @@ fun Calendar.roundToNearest(duration: Duration): Calendar {
 fun Calendar.roundToNearest(days: Int = 0, hours: Int = 0, minutes: Int = 0, seconds: Int = 0, millis: Double = 0.0): Calendar {
     val span = Duration(days, hours, minutes, seconds, millis)
     return this.roundToNearest(span)
-}

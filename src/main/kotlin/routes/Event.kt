@@ -79,10 +79,10 @@ fun Route.event(path: String) = route("$path/event") {
                 val endYYYYMM = urlParams["end"] ?: startYYYYMM
 
                 val startBounds =
-                        newCalendar(startYYYYMM.substring(4).toInt(), startYYYYMM.substring(4, 6).toInt() - 1, 1)
+                        newCalendar(startYYYYMM.substring(0,4).toInt(), startYYYYMM.substring(4, 6).toInt() - 1, 1)
 
                 val endBounds =
-                        newCalendar(endYYYYMM.substring(4).toInt(), endYYYYMM.substring(4, 6).toInt() - 1, 1)
+                        newCalendar(endYYYYMM.substring(0,4).toInt(), endYYYYMM.substring(4, 6).toInt() - 1, 1)
                                 .apply {
                                     set(Calendar.DAY_OF_MONTH, this.getActualMaximum(Calendar.DAY_OF_MONTH))
                                     setTimeAsDuration(Duration(days = 1) - Duration(millis = 0.001))
@@ -93,7 +93,7 @@ fun Route.event(path: String) = route("$path/event") {
                 // if user is getting data for the first time, user will be added to database for filtration
                 val filterResults = source.checkFilter(user)
 
-                if ((filterResults == -1 || !forceRefresh) && !isFirstTimeQuerying)
+                if (false && (filterResults == -1 || !forceRefresh) && !isFirstTimeQuerying)
                     // if cap reached call from server instead
                     call.respond(source.getLessons(user, startBounds.timeInMillis, endBounds.timeInMillis))
                 else {
