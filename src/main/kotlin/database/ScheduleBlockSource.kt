@@ -72,7 +72,7 @@ class ScheduleBlockSource {
         val filter = getFilter(user)
         when (filter) {
             null -> {
-                val rs = filterRegistration(user)
+                filterRegistration(user)
                 val newFilter = getFilter(user)
                 if (newFilter != null)
                     return updateFilter(newFilter, user)
@@ -82,6 +82,13 @@ class ScheduleBlockSource {
         return 0
     }
 
+    /**
+     * Update filter and increment by one
+     * @param filter
+     * @param user
+     * @return -1       if user maxed out number of queries left
+     * @return 1
+     */
     private fun updateFilter(filter: Filter, user: User): Int {
         val sql = "UPDATE filter SET queries = ?, cap = ?, updatedAt = ? WHERE adminNo = ?"
         return try {
@@ -125,11 +132,11 @@ class ScheduleBlockSource {
         }
     }
 
-    suspend fun getLessons(user: User, startTimestamp: Long, endTimestamp: Long): ArrayList<TimeTable.Lesson> {
+    fun getLessons(user: User, startTimestamp: Long, endTimestamp: Long): ArrayList<TimeTable.Lesson> {
         val sql = "SELECT id,moduleCode,moduleName,lessonType,location,endTime,startTime\n" +
                 "FROM lesson " +
                 "JOIN lessonstudents l ON lesson.id = l.lessonId " +
-                "WHERE l.adminNo = ? AND" +
+                "WHERE l.adminNo = ? AND " +
                 "lesson.startTime >= startTimestamp" +
                 "lesson.endTime <= endTimestamp"
 
