@@ -137,14 +137,17 @@ class ScheduleBlockSource {
                 "FROM lesson " +
                 "JOIN lessonstudents l ON lesson.id = l.lessonId " +
                 "WHERE l.adminNo = ? AND " +
-                "lesson.startTime >= startTimestamp" +
-                "lesson.endTime <= endTimestamp"
+                "lesson.startTime >= ? AND " +
+                "lesson.endTime <= ?"
 
         val finalRes = ArrayList<TimeTable.Lesson>()
         return try {
             val conn = getDbConnection()
             val ps = conn.prepareStatement(sql)
             ps.setString(1, user.adminNo)
+            ps.setLong(2,startTimestamp)
+            ps.setLong(3,endTimestamp)
+
             val rs = ps.executeQuery()
 
             while (rs.next()) {

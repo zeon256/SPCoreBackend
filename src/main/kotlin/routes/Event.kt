@@ -359,7 +359,7 @@ private fun getTimeTableFromSpice(
     // generates date in ddMMyy since first day of the current month to end of the month
     do {
 
-        val dateStr = targetDateFormat.format(currDay)
+        val dateStr = targetDateFormat.format(currDay.toDate())
 
         val url = "http://mobileappnew.sp.edu.sg/spTimetable/source/sptt.php?DDMMYY=$dateStr&id=$adminNo"
         asyncResponses.add(
