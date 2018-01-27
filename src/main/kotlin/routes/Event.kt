@@ -356,7 +356,9 @@ private fun getTimeTableFromSpice(
 
         val dateStr = targetDateFormat.format(currDay.toDate())
 
-        val timeout = 50000 // 50s
+        val timeout = 50000 // 50s. Using the server should would make sure that this wont be long
+                            // only in terrible wifi this will break
+                            // like NUS Wifi
 
         val url = "http://mobileappnew.sp.edu.sg/spTimetable/source/sptt.php?DDMMYY=$dateStr&id=$adminNo"
         asyncResponses.add(

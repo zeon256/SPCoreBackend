@@ -117,6 +117,7 @@ class AuthSource {
                 finalRes.add(rs.getString("deviceId"))
             }
 
+
             finalRes
         }catch (e:SQLException){
             e.printStackTrace()

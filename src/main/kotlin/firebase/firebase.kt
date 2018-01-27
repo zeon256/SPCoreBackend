@@ -1,5 +1,8 @@
 package firebase
 
+import java.util.*
+import kotlin.concurrent.timerTask
+
 class Firebase {
 
     /**
@@ -24,8 +27,15 @@ class Firebase {
      * Start checking at 7.45am
      */
     fun sendNotification() {
+        Timer().schedule(timerTask { /*
+        call function that has to be called every 15min
+        1. check lessons that are starting in 15min time which returns adminNo and Lesson object
+        2. Http POST to google's server to send notifications with arrayList of deviceId for user &
+        the lessonObject
+        3. Spawn the same number of coroutines of the number of lessons available
+        Initial starting time should be 7.45am on a Monday but for testing this can be faked
+        */ }, 900000) //15min delay
+
 
     }
-
-
 }
