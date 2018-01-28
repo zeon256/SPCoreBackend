@@ -421,7 +421,8 @@ class ScheduleBlockSource {
      */
     fun checkLessonStartTimeAll(currentTime:Long): ArrayList<TimeTable.Lesson>{
         val sql = "SELECT * FROM lesson WHERE startTime = ?"
-        val lessonStartTime = currentTime + 900000L
+        //val lessonStartTime = currentTime + 900000L
+        val lessonStartTime = currentTime + 30000L
         val lessonsIn15Min = ArrayList<TimeTable.Lesson>()
 
         return try {
@@ -442,6 +443,10 @@ class ScheduleBlockSource {
 
     }
 
+    /**
+     * Get devices that are tied to lesson which are tied to users
+     * @return ArrayList<String> of 
+     */
     fun getLessonStudentsByLessonId(lessonId: String): ArrayList<String>{
         val finalRes = ArrayList<String>()
         val sql = "SELECT ls.lessonId, ls.adminNo,ud.deviceId FROM lessonstudents ls \n" +
@@ -453,17 +458,14 @@ class ScheduleBlockSource {
             val ps = conn.prepareStatement(sql)
             ps.setString(1,lessonId)
             val rs = ps.executeQuery()
-            while (rs.next()){
 
-            }
+            while (rs.next()){ finalRes.add("deviceId") }
 
             finalRes
         }catch (e:SQLException){
             e.printStackTrace()
             finalRes
         }
-
-
 
     }
 
