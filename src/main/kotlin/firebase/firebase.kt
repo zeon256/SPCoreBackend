@@ -7,8 +7,15 @@ import models.TimeTable
 import java.time.Instant
 import java.util.*
 import kotlin.concurrent.timerTask
+import java.text.SimpleDateFormat
+import java.text.DateFormat
 
-class Firebase {
+
+
+class Firebase: TimerTask() {
+    override fun run() {
+        Timer().schedule(timerTask { sendNotification() }, 900000)
+    }
 
     /**
      * Http POST to https://fcm.googleapis.com/fcm/send
@@ -99,8 +106,6 @@ class Firebase {
                            val lesson: TimeTable.Lesson)
         fun convertToJSON() = Gson().toJson(this)
     }
-
-
 }
 
 fun test(){
@@ -122,9 +127,11 @@ fun test(){
         println("Response -> \t $response")
         println("Result -> \t" + result.get())
     }
+
 }
 
 fun main(args: Array<String>) {
+    println("Testing notifications")
     //testing to send every 30s interval starting from 12.50am (28/1/2018)
     //val startTimeSend = 1517072520L
     val firebase = Firebase()

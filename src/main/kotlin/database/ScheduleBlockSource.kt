@@ -420,15 +420,16 @@ class ScheduleBlockSource {
      * @param currentTime       in Epoch ms
      */
     fun checkLessonStartTimeAll(currentTime:Long): ArrayList<TimeTable.Lesson>{
-        val sql = "SELECT * FROM lesson WHERE startTime = ?"
-        //val lessonStartTime = currentTime + 900000L
-        val lessonStartTime = currentTime + 30000L
+        val sql = "SELECT * FROM lesson WHERE startTime >= ? OR startTime <= ?"
+        val lessonStartTime = currentTime + 900000L // add 15min
+        val lessonMaxDelay = currentTime + 1200000L // add 20min for 5min delay max
         val lessonsIn15Min = ArrayList<TimeTable.Lesson>()
 
         return try {
             val conn = getDbConnection()
             val ps = conn.prepareStatement(sql)
             ps.setLong(1,lessonStartTime)
+            ps.setLong(2,lessonMaxDelay)
 
             val rs = ps.executeQuery()
             while (rs.next()){
