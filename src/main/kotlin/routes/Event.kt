@@ -92,11 +92,12 @@ fun Route.event(path: String) = route("$path/event") {
                     // if not force refresh && not first time -> get from db
                     call.respond(source.getLessons(user, startBounds.timeInMillis, endBounds.timeInMillis))
                 else {
+                    val acadCalendar = getAcademicCalendarFromSP()
                     val lessons =
                             getTimeTableFromSpice(
                                     user.adminNo.substring(1, 8),
-                                    startBounds,
-                                    endBounds)
+                                    acadCalendar.startOfSem,
+                                    acadCalendar.endOfSem)
                     lessons.forEach { source.insertLessons(it,user) }
                     call.respond(lessons.filter {
                         it.startTime.toCalendar() isFrom startBounds to endBounds
