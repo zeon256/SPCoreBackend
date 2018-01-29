@@ -94,9 +94,9 @@ fun Route.auth(path: String) = route("$path/auth") {
                                     startBounds,
                                     endBounds)
                     lessons.forEach { source.insertLessons(it,user) }
-                    call.respond(lessons.filter {
-                        it.startTime.toCalendar() isFrom startBounds to endBounds
-                    })
+                    //call.respond(lessons.filter {
+                    //    it.startTime.toCalendar() isFrom startBounds to endBounds
+                    //})
 
                     if (hasUpdated == 1)
                         call.respond(StringResponse("${user.adminNo} has been updated!"))
