@@ -331,7 +331,7 @@ fun Route.event(path: String) = route("$path/event") {
  * @param startDay First day of timetable to get inclusive
  * @param endDay   Last day of timetable to get inclusive
  */
-private fun getTimeTableFromSpice(
+fun getTimeTableFromSpice(
         adminNo: String,
         startDay: Calendar =
             Calendar.getInstance().startOfDay().apply {
@@ -397,8 +397,8 @@ private fun String?.toUserList(): List<String>? = when (this.isNullOrBlank()) {
             .toList()
 }
 
-private fun getAcademicCalendarFromSP() : AcademicCalendar {
+fun getAcademicCalendarFromSP() : AcademicCalendar {
     return AcademicCalendar(newCalendar(2017, 9, 16), newCalendar(2018, 2, 2))
 }
 
-private class AcademicCalendar(val startOfSem: Calendar, val endOfSem: Calendar)
+class AcademicCalendar(val startOfSem: Calendar, val endOfSem: Calendar)

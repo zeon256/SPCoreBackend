@@ -1,8 +1,11 @@
 package routes.authentication
 
 import com.github.kittinunf.fuel.httpPost
+import com.spcore.helpers.*
 import database.AuthSource
+import database.ScheduleBlockSource
 import exceptions.*
+import io.ktor.application.ApplicationCall
 import io.ktor.application.call
 import io.ktor.http.HttpStatusCode
 import io.ktor.request.receive
@@ -11,6 +14,9 @@ import io.ktor.routing.*
 import io.ktor.util.ValuesMap
 import models.StringResponse
 import models.User
+import routes.getAcademicCalendarFromSP
+import routes.getTimeTableFromSpice
+import java.util.*
 
 fun Route.auth(path: String) = route("$path/auth") {
     post("/login") {
@@ -77,6 +83,21 @@ fun Route.auth(path: String) = route("$path/auth") {
                                     form["username"].toString(),
                                     form["displayName"].toString()
                             ))
+
+                    val source = ScheduleBlockSource()
+                    val startBounds = getAcademicCalendarFromSP().startOfSem
+                    val endBounds = getAcademicCalendarFromSP().endOfSem
+
+                    val lessons =
+                            getTimeTableFromSpice(
+                                    user.adminNo.substring(1, 8),
+                                    startBounds,
+                                    endBounds)
+                    lessons.forEach { source.insertLessons(it,user) }
+                    call.respond(lessons.filter {
+                        it.startTime.toCalendar() isFrom startBounds to endBounds
+                    })
+
                     if (hasUpdated == 1)
                         call.respond(StringResponse("${user.adminNo} has been updated!"))
 
@@ -118,3 +139,4 @@ fun validateWithSp(form: ValuesMap): Int {
 
     return isAuth
 }
+
