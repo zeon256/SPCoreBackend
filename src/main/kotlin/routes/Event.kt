@@ -10,6 +10,7 @@ import database.AuthSource
 import database.ScheduleBlockSource
 import database.Utils
 import exceptions.*
+import firebase.Firebase
 import io.ktor.application.call
 import io.ktor.http.HttpStatusCode
 import io.ktor.request.receive
@@ -151,6 +152,17 @@ fun Route.event(path: String) = route("$path/event") {
                 }
             }
         }
+    }
+
+    //force notification
+    get("forceNotif"){
+        val lessonId = call.parameters["lessonId"].toString()
+        val firebase = Firebase()
+        val lesson = ScheduleBlockSource().getLessonById(lessonId = lessonId)
+        if (lesson != null) {
+            firebase.sendNotificationByIdTEst(lesson)
+        }
+        call.respond("sent")
     }
 
     // invite guest to events

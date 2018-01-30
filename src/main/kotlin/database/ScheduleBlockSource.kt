@@ -48,6 +48,24 @@ class ScheduleBlockSource {
         }
     }
 
+    fun getLessonById(lessonId: String): TimeTable.Lesson? {
+        val sql = "SELECT * FROM lesson WHERE id = ?"
+        return try{
+            val conn = getDbConnection()
+            val ps = conn.prepareStatement(sql)
+            ps.setString(1,lessonId)
+            val rs = ps.executeQuery()
+            var less: TimeTable.Lesson? = null
+
+            if(rs.next())
+                less = rs.toLesson()
+            less
+        }catch (e:SQLException){
+            e.printStackTrace()
+            null
+        }
+    }
+
     fun insertLessons(lesson: TimeTable.Lesson, user: User): Boolean {
         val sql = "INSERT IGNORE INTO lesson VALUES (?,?,?,?,?,?,?)"
 

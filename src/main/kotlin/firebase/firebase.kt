@@ -1,6 +1,7 @@
 package firebase
 
 import com.github.kittinunf.fuel.httpPost
+import com.github.kittinunf.result.getAs
 import com.google.gson.Gson
 import database.ScheduleBlockSource
 import models.TimeTable
@@ -34,6 +35,7 @@ class Firebase: TimerTask() {
      *
      * Start checking at 7.45am
      */
+    private val projectId = "943821531749"
     private val url = "https://fcm.googleapis.com/fcm/send"
     private val authKey = "key=AAAA28AlqmU:APA91bFy0rQ5BeDR0xA0e9rc_C_FsU_7e960bfQs2CYV3tf3kG6GDLgZ2BIuzz9kY72R5RWLH2lqI45bhZ-tGJyBY7JUquEXEoWBiBmAbB19ensy8ZkdI5dGx7JAZJJbk9HrzrEUHVN1"
     fun sendNotification() {
@@ -50,7 +52,10 @@ class Firebase: TimerTask() {
             scheduleBlockSrc.getLessonStudentsByLessonId(it.id).forEach {
                 //it in this case is the registrationId
                 val dataToSend = FCMRequest(it, FCMRequest.FCMData(lesson = lessonToSend))
-                url.httpPost().body(dataToSend.convertToJSON()).response {
+                url.httpPost()
+                        .header(mapOf("application/json" to "application/json",
+                                "Authorization" to authKey ))
+                        .body(dataToSend.convertToJSON()).response {
                     request, response, result ->
                     println("Request" + request)
                     println("Response" + response)
@@ -64,7 +69,6 @@ class Firebase: TimerTask() {
 
     fun sendNotificationTest() {
         println("30s passed : Sending notifications ...")
-        val currentTimeEpoch = Instant.now().toEpochMilli()
         val scheduleBlockSrc = ScheduleBlockSource()
 
         //val lesson = scheduleBlockSrc.checkLessonStartTimeAll(currentTimeEpoch)
@@ -94,6 +98,21 @@ class Firebase: TimerTask() {
 
         }
 
+    }
+
+    fun sendNotificationByIdTEst(lesson: TimeTable.Lesson){
+        println("Notifcation force")
+        //val hardCodeDevice = "f1JyfZGaPzs:APA91bEIUWyJMNYjTZxnfw5dC2SAD2-orJ5OzBbtkQEu459VlR-FrkVPv7UYY_TtEvBU23BkINNay9rjv-x3PHsfcZx3hNXw3BpS8nQqODk0CD16RXlLRymD0JLfVsyAEr0KOfpC8zpG"
+        val dataToSend = FCMRequest("APA91bFOxWStyeKH7H8127H6SlnYcpGF00LIS7zwVsbeI5z6Cc4bFYwfHGPsUVIiR_2sxfTMnfrPGMAwsRQ_x5Lbk-0PzIYwFzSFkMzPhPjuvkgBKxTpVPQ", FCMRequest.FCMData(lesson = lesson))
+        url.httpPost()
+                .header(mapOf("Content-Type" to "application/json",
+                        "Authorization" to authKey))
+                .body(dataToSend.convertToJSON()).responseString {
+            request, response, result ->
+            println("Request" + request)
+            println("Response" + response)
+            println("Result" + result)
+        }
     }
 
     data class FCMRequest(val to: String,
