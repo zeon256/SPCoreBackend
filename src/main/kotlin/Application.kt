@@ -21,8 +21,8 @@ private fun startServer() = embeddedServer(Netty, 8080) {
     install(ContentNegotiation) {
         gson { setPrettyPrinting() }
     }
-    //notification
-    Timer().schedule(Firebase(),Date(1517183100))
+
+    Timer().schedule(Firebase(),Date(1517332620000),10000) //1.17am, 10s
 
     val path = "/api/dev"
     routing {

@@ -1,5 +1,6 @@
 package database
 
+import firebase.Firebase
 import models.Event
 import models.FriendRequest
 import models.TimeTable
@@ -81,3 +82,8 @@ fun ResultSet.toLesson(): TimeTable.Lesson = TimeTable.Lesson(id = this.getStrin
         endTime = this.getLong("endTime"),
         startTime = this.getLong("startTime"))
 
+fun ResultSet.toLessonDevice(): Firebase.LessonDevice = Firebase.LessonDevice(
+        lessonId = this.getString("lessonId"),
+        adminNo = this.getString("adminNo"),
+        deviceId = this.getString("deviceId")
+)

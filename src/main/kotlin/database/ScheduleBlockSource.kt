@@ -1,5 +1,6 @@
 package database
 
+import firebase.Firebase
 import io.ktor.util.toLocalDateTime
 import models.Event
 import models.Filter
@@ -466,8 +467,8 @@ class ScheduleBlockSource {
      * Get devices that are tied to lesson which are tied to users
      * @return ArrayList<String> of 
      */
-    fun getLessonStudentsByLessonId(lessonId: String): ArrayList<String>{
-        val finalRes = ArrayList<String>()
+    fun getLessonStudentsByLessonId(lessonId: String): ArrayList<Firebase.LessonDevice>{
+        val finalRes = ArrayList<Firebase.LessonDevice>()
         val sql = "SELECT ls.lessonId, ls.adminNo,ud.deviceId FROM lessonstudents ls \n" +
                 "RIGHT JOIN userdevice ud ON  ls.adminNo = ud.adminNo \n" +
                 "WHERE lessonId = ?"
@@ -478,7 +479,9 @@ class ScheduleBlockSource {
             ps.setString(1,lessonId)
             val rs = ps.executeQuery()
 
-            while (rs.next()){ finalRes.add("deviceId") }
+            while (rs.next()){
+                finalRes.add(rs.toLessonDevice())
+            }
 
             finalRes
         }catch (e:SQLException){
@@ -491,8 +494,3 @@ class ScheduleBlockSource {
 
 }
 
-fun main(args: Array<String>) {
-    val src = ScheduleBlockSource()
-    val lessons = src.checkLessonStartTimeAll(1516941900000)
-    println(lessons)
-}

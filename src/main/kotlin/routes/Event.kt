@@ -156,12 +156,26 @@ fun Route.event(path: String) = route("$path/event") {
 
     //force notification
     get("forceNotif"){
-        val lessonId = call.parameters["lessonId"].toString()
+        val adminNo = "p1626175"
         val firebase = Firebase()
-        val lesson = ScheduleBlockSource().getLessonById(lessonId = lessonId)
-        if (lesson != null) {
-            firebase.sendNotificationByIdTEst(lesson)
-        }
+        val resCreateDeviceGrp = firebase.createDeviceGroup(adminNo,
+                arrayListOf("e0J7FHN0yz4:APA91bFNVHM2gpC19yBd4wfOfzA--3LcIfJs4uF1KjZAvWxgnso6A3fF3WJ-GYX2UhaSb8mHNCl8vFdHzHgON24JIGT9lssxIp-TPMXAu0zZcA0EB3oSHTF6lBb6WaeKwv8MT_p17nnD"))
+
+        var notifKey = ""
+
+        //if NotifKey alr exist -> get NotifKey -> send Notif
+        notifKey = if(resCreateDeviceGrp.component2() != null)
+            firebase.retrieveNotificationKey(adminNo).component1()!!.notification_key
+        else
+            resCreateDeviceGrp.component1().toString()
+
+
+        val sendNotif = ScheduleBlockSource().
+                getLessonById("03defcf5ddd055f95b1fc4934400334f")?.let { firebase.sendLessonNotification(notifKey, it) }
+
+        println(notifKey)
+        println(sendNotif)
+
         call.respond("sent")
     }
 

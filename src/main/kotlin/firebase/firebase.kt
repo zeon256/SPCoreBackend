@@ -1,7 +1,11 @@
 package firebase
 
+import com.github.kittinunf.fuel.core.FuelError
+import com.github.kittinunf.fuel.core.ResponseDeserializable
+import com.github.kittinunf.fuel.gson.responseObject
+import com.github.kittinunf.fuel.httpGet
 import com.github.kittinunf.fuel.httpPost
-import com.github.kittinunf.result.getAs
+import com.github.kittinunf.result.Result
 import com.google.gson.Gson
 import database.ScheduleBlockSource
 import models.TimeTable
@@ -11,7 +15,8 @@ import kotlin.concurrent.timerTask
 
 class Firebase: TimerTask() {
     override fun run() {
-        Timer().schedule(timerTask { sendNotification() }, 900000)
+        //Timer().schedule(timerTask { sendNotificationTest() }, 10000L)
+        sendNotificationTest()
     }
 
     /**
@@ -35,11 +40,11 @@ class Firebase: TimerTask() {
      *
      * Start checking at 7.45am
      */
-    private val projectId = "943821531749"
-    private val url = "https://fcm.googleapis.com/fcm/send"
     private val authKey = "key=AAAA28AlqmU:APA91bFy0rQ5BeDR0xA0e9rc_C_FsU_7e960bfQs2CYV3tf3kG6GDLgZ2BIuzz9kY72R5RWLH2lqI45bhZ-tGJyBY7JUquEXEoWBiBmAbB19ensy8ZkdI5dGx7JAZJJbk9HrzrEUHVN1"
+
     fun sendNotification() {
         println("15min passed : Sending notifications ...")
+
         val currentTimeEpoch = Instant.now().toEpochMilli()
         val scheduleBlockSrc = ScheduleBlockSource()
 
@@ -50,69 +55,110 @@ class Firebase: TimerTask() {
             val lessonToSend = it //Lesson Object
 
             scheduleBlockSrc.getLessonStudentsByLessonId(it.id).forEach {
-                //it in this case is the registrationId
-                val dataToSend = FCMRequest(it, FCMRequest.FCMData(lesson = lessonToSend))
-                url.httpPost()
-                        .header(mapOf("application/json" to "application/json",
-                                "Authorization" to authKey ))
-                        .body(dataToSend.convertToJSON()).response {
-                    request, response, result ->
-                    println("Request" + request)
-                    println("Response" + response)
-                    println("Result" + result)
-                }
+                notificationSetup(deviceId = it.deviceId,
+                        adminNo = it.adminNo,
+                        lesson = lessonToSend,
+                        deviceIdArrList = arrayListOf(it.deviceId))
             }
 
         }
 
     }
 
-    fun sendNotificationTest() {
-        println("30s passed : Sending notifications ...")
+    fun sendNotificationTest(){
+        println("10s passed : Sending notifications ...")
+
         val scheduleBlockSrc = ScheduleBlockSource()
 
-        //val lesson = scheduleBlockSrc.checkLessonStartTimeAll(currentTimeEpoch)
-        // hardcoding lessons for testing
         val lesson = arrayListOf(
-                TimeTable.Lesson("05cf76ec0ccde638d662dec48cef51fb","ST0277","DEUI","LAB","T2253",1509332400000,1509343200000),
-                TimeTable.Lesson("03defcf5ddd055f95b1fc4934400334f","ST0277","DEUI","LAB","T2253",1509332400000,1509343200000)
-        )
+                scheduleBlockSrc.getLessonById("03defcf5ddd055f95b1fc4934400334f")!!)
 
         lesson.forEach {
             // returns arrayList of devices to send to
             val lessonToSend = it //Lesson Object
 
             scheduleBlockSrc.getLessonStudentsByLessonId(it.id).forEach {
-                //it in this case is the registrationId
-                val dataToSend = FCMRequest(it, FCMRequest.FCMData(lesson = lessonToSend))
-                url.httpPost()
-                        .header(mapOf("application/json" to "application/json",
-                                "Authorization" to authKey ))
-                        .body(dataToSend.convertToJSON()).response {
-                    request, response, result ->
-                    println("Request" + request)
-                    println("Response" + response)
-                    println("Result" + result)
-                }
+                notificationSetup(deviceId = it.deviceId,
+                        adminNo = it.adminNo,
+                        lesson = lessonToSend,
+                        deviceIdArrList = arrayListOf(it.deviceId))
             }
 
         }
-
     }
 
-    fun sendNotificationByIdTEst(lesson: TimeTable.Lesson){
-        println("Notifcation force")
-        //val hardCodeDevice = "f1JyfZGaPzs:APA91bEIUWyJMNYjTZxnfw5dC2SAD2-orJ5OzBbtkQEu459VlR-FrkVPv7UYY_TtEvBU23BkINNay9rjv-x3PHsfcZx3hNXw3BpS8nQqODk0CD16RXlLRymD0JLfVsyAEr0KOfpC8zpG"
-        val dataToSend = FCMRequest("APA91bFOxWStyeKH7H8127H6SlnYcpGF00LIS7zwVsbeI5z6Cc4bFYwfHGPsUVIiR_2sxfTMnfrPGMAwsRQ_x5Lbk-0PzIYwFzSFkMzPhPjuvkgBKxTpVPQ", FCMRequest.FCMData(lesson = lesson))
-        url.httpPost()
+    fun notificationSetup(deviceId: String,adminNo: String, deviceIdArrList: ArrayList<String>, lesson: TimeTable.Lesson){
+        val resCreateDeviceGrp = createDeviceGroup(adminNo,deviceIdArrList)
+
+        var notifKey = ""
+
+        //if NotifKey alr exist -> get NotifKey -> send Notif
+        notifKey = if(resCreateDeviceGrp.component2() != null)
+            retrieveNotificationKey(adminNo).component1()!!.notification_key
+        else
+            resCreateDeviceGrp.component1()!!.notification_key
+
+        sendLessonNotification(deviceId,lesson)
+    }
+
+    // creating device group
+    fun createDeviceGroup(adminNo: String, registration_ids: ArrayList<String>): Result<NotifKey, FuelError> {
+        val url = "https://android.googleapis.com/gcm/notification"
+
+        val (req,res,result) = url.httpPost()
+                .header(mapOf("Content-Type" to "application/json",
+                        "Authorization" to authKey,
+                        "project_id" to 943821531749))
+                .body(FCMNotifKey(notification_key_name = adminNo,
+                        registration_ids = registration_ids).convertToJSON())
+                .responseObject(NotifKey.Deserializer())
+
+        println("Creating Device Grp")
+        println(req)
+        println(res)
+
+        return result
+    }
+
+    //getNotifKey
+    fun retrieveNotificationKey(adminNo: String): Result<NotifKey, FuelError> {
+        val url = "https://android.googleapis.com/gcm/notification?notification_key_name=$adminNo"
+
+        val (req,res,result) = url.httpGet()
+                .header(mapOf("Content-Type" to "application/json",
+                        "Authorization" to authKey,
+                        "project_id" to 943821531749))
+                .responseObject(NotifKey.Deserializer())
+        println("Retrieving NotifKey")
+        println(req)
+        println(res)
+
+        return result
+    }
+
+    //sendNotif
+    fun sendLessonNotification(notifKey: String,lessonToSend:TimeTable.Lesson): Result<String, FuelError> {
+        val url = "https://fcm.googleapis.com/fcm/send"
+
+        val dataToSend = FCMRequest(notifKey, FCMRequest.FCMData(lesson = lessonToSend))
+
+        val (req,res,result) = url.httpPost()
                 .header(mapOf("Content-Type" to "application/json",
                         "Authorization" to authKey))
-                .body(dataToSend.convertToJSON()).responseString {
-            request, response, result ->
-            println("Request" + request)
-            println("Response" + response)
-            println("Result" + result)
-        }
+                .body(dataToSend.convertToJSON())
+                .responseString()
+
+        println("Sending Lesson")
+        println(req)
+        println(res)
+
+        return result
+    }
+
+    data class FCMNotifKey(val operation:String = "create",
+                           val notification_key_name: String,
+                           val registration_ids: ArrayList<String> = arrayListOf()){
+        fun convertToJSON() = Gson().toJson(this)
     }
 
     data class FCMRequest(val to: String,
@@ -121,37 +167,22 @@ class Firebase: TimerTask() {
                            val lesson: TimeTable.Lesson)
         fun convertToJSON() = Gson().toJson(this)
     }
-}
 
-fun test(){
-    val dataToSend = Firebase.FCMRequest("APA91bFqRx9rmnu7tXi47cQBhKQNVIkLe_yutQ3vFCtR8SdeItjo1CTGsJYRRj7DDF_ju9Y2WncloQM1Y65n1JXtc_aJrTJXRNrBjowMkmhl-vwC_VdjSQQ",
-            Firebase.FCMRequest.FCMData(lesson = TimeTable
-                    .Lesson("00e978b6ea2ebee38ec9531347b6998f",
-                            "LC8003",
-                            "SIP",
-                            "TUT",
-                            "T1642",
-                            1510815600000,
-                            1510822800000)))
-
-    "https://fcm.googleapis.com/fcm/send"
-            .httpPost()
-            .body(dataToSend.convertToJSON()).response { request, response, result ->
-
-        println("Request -> \t $request")
-        println("Response -> \t $response")
-        println("Result -> \t" + result.get())
+    data class NotifKey(val notification_key: String) {
+        class Deserializer : ResponseDeserializable<NotifKey> {
+            override fun deserialize(content: String) =
+                    Gson().fromJson(content, NotifKey::class.java)
+        }
     }
 
+    data class LessonDevice(val lessonId: String,
+                            val adminNo: String,
+                            val deviceId: String){
+        class Deserializer : ResponseDeserializable<LessonDevice> {
+            override fun deserialize(content: String) =
+                    Gson().fromJson(content, LessonDevice::class.java)
+        }
+    }
 }
 
-fun main(args: Array<String>) {
-    println("Testing notifications")
-    //testing to send every 30s interval starting from 12.50am (28/1/2018)
-    //val startTimeSend = 1517072520L
-    val firebase = Firebase()
-    //while (startTimeSend == Instant.now().toEpochMilli()){
-        Timer().schedule(timerTask { firebase.sendNotificationTest() }, 10000)
-    //}
 
-}

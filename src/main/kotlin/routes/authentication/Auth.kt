@@ -36,9 +36,11 @@ fun Route.auth(path: String) = route("$path/auth") {
             3 -> call.respond(HttpStatusCode.Unauthorized, ErrorMsg("Wrong Spice Credentials",
                     WRONG_SPICE_CRENDENTIALS))
             else -> {
-                println("dank $firebaseToken")
                 val src = AuthSource()
                 val isUserExist = src.isUserExist(form["adminNo"].toString())
+
+                println(firebaseToken)
+
                 if (!isUserExist) {
                     // if user is not in table, insert user into table
                     val hasRegistered = src.registerUser(
