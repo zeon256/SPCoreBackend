@@ -111,6 +111,7 @@ CREATE TABLE lessonstudents
   PRIMARY KEY (lessonId, adminNo),
   CONSTRAINT lessonstudents_lesson_id_fk
   FOREIGN KEY (lessonId) REFERENCES lesson (id)
+    ON UPDATE CASCADE
     ON DELETE CASCADE
 )
   ENGINE = InnoDB;
@@ -132,6 +133,7 @@ CREATE TABLE user
 ALTER TABLE event
   ADD CONSTRAINT event_user_adminNo_fk
 FOREIGN KEY (creatorId) REFERENCES user (adminNo)
+  ON UPDATE CASCADE
   ON DELETE CASCADE;
 
 ALTER TABLE friend
@@ -153,5 +155,18 @@ FOREIGN KEY (receiver) REFERENCES user (adminNo);
 ALTER TABLE lessonstudents
   ADD CONSTRAINT lessonstudents_user_adminNo_fk
 FOREIGN KEY (adminNo) REFERENCES user (adminNo)
+  ON UPDATE CASCADE
   ON DELETE CASCADE;
+
+CREATE TABLE userdevice
+(
+  adminNo  CHAR(8)       NOT NULL,
+  deviceId VARCHAR(1000) NOT NULL,
+  PRIMARY KEY (adminNo, deviceId),
+  CONSTRAINT userdevice_user_adminNo_fk
+  FOREIGN KEY (adminNo) REFERENCES user (adminNo)
+    ON UPDATE CASCADE
+    ON DELETE CASCADE
+)
+  ENGINE = InnoDB;
 
