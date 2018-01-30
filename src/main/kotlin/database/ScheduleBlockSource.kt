@@ -37,8 +37,8 @@ class ScheduleBlockSource {
                         rs.getString("moduleName"),
                         rs.getString("lessonType"),
                         rs.getString("location"),
-                        rs.getLong("endTime"),
-                        rs.getLong("startTime")
+                        rs.getLong("startTime"),
+                        rs.getLong("endTime")
                 ))
             }
             finalRes

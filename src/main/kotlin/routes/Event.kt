@@ -87,10 +87,13 @@ fun Route.event(path: String) = route("$path/event") {
                                     set(Calendar.DAY_OF_MONTH, this.getActualMaximum(Calendar.DAY_OF_MONTH))
                                     setTimeAsDuration(Duration(days = 1) - Duration(millis = 0.001))
                                 }
+                println("$startYYYYMM & $endYYYYMM")
 
-                if (!forceRefresh)
-                    // if not force refresh && not first time -> get from db
-                    call.respond(source.getLessons(user, startBounds.timeInMillis, endBounds.timeInMillis))
+                if (!forceRefresh){
+                    // if not force refresh && not first time -> get from db{
+                    val lessonsForFrontEnd = source.getLessons(user, startBounds.timeInMillis, endBounds.timeInMillis)
+                    call.respond(lessonsForFrontEnd)
+                }
                 else {
                     val acadCalendar = getAcademicCalendarFromSP()
                     val lessons =
@@ -99,6 +102,7 @@ fun Route.event(path: String) = route("$path/event") {
                                     acadCalendar.startOfSem,
                                     acadCalendar.endOfSem)
                     lessons.forEach { source.insertLessons(it,user) }
+
                     call.respond(lessons.filter {
                         it.startTime.toCalendar() isFrom startBounds to endBounds
                     })
@@ -363,7 +367,7 @@ fun getTimeTableFromSpice(
 
         val url = "http://mobileappnew.sp.edu.sg/spTimetable/source/sptt.php?DDMMYY=$dateStr&id=$adminNo"
         asyncResponses.add(
-                async(newFixedThreadPoolContext(180, "My nigga")) {
+                async(newFixedThreadPoolContext(30, "My nigga")) {
                     println("Async: $dateStr")
                     Pair(url.httpPost().timeout(timeout).timeoutRead(timeout).responseObject(TimetableFromSpice.Deserializer()),
                             dateStr)

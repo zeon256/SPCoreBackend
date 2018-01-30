@@ -8,9 +8,6 @@ import java.time.Instant
 import java.util.*
 import kotlin.concurrent.timerTask
 
-
-
-
 class Firebase: TimerTask() {
     override fun run() {
         Timer().schedule(timerTask { sendNotification() }, 900000)
