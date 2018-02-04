@@ -382,20 +382,22 @@ fun getTimeTableFromSpice(
     val asyncResponses =
             mutableListOf<Deferred<Pair<FuelRRR, String>>>()
 
+    val tp = newFixedThreadPoolContext(180, "My nigga")
     // generates date in ddMMyy since first day of the current month to end of the month
     do {
 
         val dateStr = targetDateFormat.format(currDay.toDate())
 
-        val timeout = 500000 // 50s. Using the server should would make sure that this wont be long
-                            // only in terrible wifi this will break
-                            // like NUS Wifi
+        val timeout = 50000 //50s
 
         val url = "http://mobileappnew.sp.edu.sg/spTimetable/source/sptt.php?DDMMYY=$dateStr&id=$adminNo"
         asyncResponses.add(
-                async(newFixedThreadPoolContext(30, "My nigga")) {
+                async(tp) {
                     println("Async: $dateStr")
-                    Pair(url.httpPost().timeout(timeout).timeoutRead(timeout).responseObject(TimetableFromSpice.Deserializer()),
+                    Pair(url.httpPost()
+                            .timeout(timeout)
+                            .timeoutRead(timeout)
+                            .responseObject(TimetableFromSpice.Deserializer()),
                             dateStr)
                 })
 
