@@ -22,7 +22,7 @@ private fun startServer() = embeddedServer(Netty, 8080) {
         gson { setPrettyPrinting() }
     }
 
-    Timer().schedule(Firebase(),Date(1517332620000),10000) //1.17am, 10s
+    //Timer().schedule(Firebase(),Date(1517332620000),30000) //1.17am, 10s
 
     val path = "/api/dev"
     routing {

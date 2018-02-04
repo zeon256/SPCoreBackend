@@ -1,172 +1,191 @@
-CREATE TABLE event
+create table event
 (
-  id        CHAR(32)     NOT NULL
-    PRIMARY KEY,
-  title     VARCHAR(100) NOT NULL,
-  location  VARCHAR(100) NOT NULL,
-  startTime CHAR(13)     NOT NULL,
-  endTime   CHAR(13)     NOT NULL,
-  creatorId CHAR(8)      NOT NULL
+  id char(32) not null
+    primary key,
+  title varchar(100) not null,
+  location varchar(100) not null,
+  startTime char(13) not null,
+  endTime char(13) not null,
+  creatorId char(8) not null
 )
-  ENGINE = InnoDB;
+  engine=InnoDB
+;
 
-CREATE INDEX event_user_adminNo_fk
-  ON event (creatorId);
+create index event_user_adminNo_fk
+  on event (creatorId)
+;
 
-CREATE TABLE eventdeletedinvite
+create table eventdeletedinvite
 (
-  eventId CHAR(32) NOT NULL,
-  adminNo CHAR(8)  NOT NULL,
-  PRIMARY KEY (eventId, adminNo),
-  CONSTRAINT eventdeletedinvite_event_id_fk
-  FOREIGN KEY (eventId) REFERENCES event (id)
-    ON DELETE CASCADE
+  eventId char(32) not null,
+  adminNo char(8) not null,
+  primary key (eventId, adminNo),
+  constraint eventdeletedinvite_event_id_fk
+  foreign key (eventId) references event (id)
+    on delete cascade
 )
-  ENGINE = InnoDB;
+  engine=InnoDB
+;
 
-CREATE TABLE eventgoing
+create table eventgoing
 (
-  eventId CHAR(32) NOT NULL,
-  adminNo CHAR(8)  NOT NULL,
-  PRIMARY KEY (eventId, adminNo),
-  CONSTRAINT eventgoing_event_id_fk
-  FOREIGN KEY (eventId) REFERENCES event (id)
-    ON DELETE CASCADE
+  eventId char(32) not null,
+  adminNo char(8) not null,
+  primary key (eventId, adminNo),
+  constraint eventgoing_event_id_fk
+  foreign key (eventId) references event (id)
+    on delete cascade
 )
-  ENGINE = InnoDB;
+  engine=InnoDB
+;
 
-CREATE TABLE eventhaventrespond
+create table eventhaventrespond
 (
-  eventId CHAR(32) NOT NULL,
-  adminNo CHAR(8)  NOT NULL,
-  PRIMARY KEY (eventId, adminNo),
-  CONSTRAINT eventhaventrespond_event_id_fk
-  FOREIGN KEY (eventId) REFERENCES event (id)
-    ON DELETE CASCADE
+  eventId char(32) not null,
+  adminNo char(8) not null,
+  primary key (eventId, adminNo),
+  constraint eventhaventrespond_event_id_fk
+  foreign key (eventId) references event (id)
+    on delete cascade
 )
-  ENGINE = InnoDB;
+  engine=InnoDB
+;
 
-CREATE TABLE eventnotgoing
+create table eventnotgoing
 (
-  eventId CHAR(32) NOT NULL,
-  adminNo CHAR(8)  NOT NULL,
-  PRIMARY KEY (eventId, adminNo),
-  CONSTRAINT eventnotgoing_event_id_fk
-  FOREIGN KEY (eventId) REFERENCES event (id)
-    ON DELETE CASCADE
+  eventId char(32) not null,
+  adminNo char(8) not null,
+  primary key (eventId, adminNo),
+  constraint eventnotgoing_event_id_fk
+  foreign key (eventId) references event (id)
+    on delete cascade
 )
-  ENGINE = InnoDB;
+  engine=InnoDB
+;
 
-CREATE TABLE friend
+create table friend
 (
-  edgeId     CHAR(32) NOT NULL
-    PRIMARY KEY,
-  originNode CHAR(8)  NOT NULL,
-  destNode   CHAR(8)  NOT NULL,
-  CONSTRAINT friend_edgeId_uindex
-  UNIQUE (edgeId)
+  edgeId char(32) not null
+    primary key,
+  originNode char(8) not null,
+  destNode char(8) not null,
+  constraint friend_edgeId_uindex
+  unique (edgeId)
 )
-  ENGINE = InnoDB;
+  engine=InnoDB
+;
 
-CREATE INDEX originNode
-  ON friend (originNode);
+create index originNode
+  on friend (originNode)
+;
 
-CREATE INDEX destNode
-  ON friend (destNode);
+create index destNode
+  on friend (destNode)
+;
 
-CREATE TABLE friendrequest
+create table friendrequest
 (
-  requestId CHAR(32) NOT NULL
-    PRIMARY KEY,
-  requestee CHAR(8)  NOT NULL,
-  receiver  CHAR(8)  NOT NULL,
-  CONSTRAINT friendRequest_requestId_uindex
-  UNIQUE (requestId)
+  requestId char(32) not null
+    primary key,
+  requestee char(8) not null,
+  receiver char(8) not null,
+  constraint friendRequest_requestId_uindex
+  unique (requestId)
 )
-  ENGINE = InnoDB;
+  engine=InnoDB
+;
 
-CREATE INDEX requestee
-  ON friendrequest (requestee);
+create index requestee
+  on friendrequest (requestee)
+;
 
-CREATE INDEX receiver
-  ON friendrequest (receiver);
+create index receiver
+  on friendrequest (receiver)
+;
 
-CREATE TABLE lesson
+create table lesson
 (
-  id         CHAR(32)    NOT NULL
-    PRIMARY KEY,
-  moduleCode VARCHAR(15) NOT NULL,
-  moduleName VARCHAR(50) NOT NULL,
-  lessonType VARCHAR(10) NOT NULL,
-  location   VARCHAR(20) NOT NULL,
-  endTime    CHAR(13)    NULL,
-  startTime  CHAR(13)    NOT NULL
+  id char(32) not null
+    primary key,
+  moduleCode varchar(15) not null,
+  moduleName varchar(50) not null,
+  lessonType varchar(10) not null,
+  location varchar(20) not null,
+  endTime char(13) null,
+  startTime char(13) not null
 )
-  ENGINE = InnoDB;
+  engine=InnoDB
+;
 
-CREATE TABLE lessonstudents
+create table lessonstudents
 (
-  lessonId CHAR(32) NOT NULL,
-  adminNo  CHAR(8)  NOT NULL,
-  PRIMARY KEY (lessonId, adminNo),
-  CONSTRAINT lessonstudents_lesson_id_fk
-  FOREIGN KEY (lessonId) REFERENCES lesson (id)
-    ON UPDATE CASCADE
-    ON DELETE CASCADE
+  lessonId char(32) not null,
+  adminNo char(8) not null,
+  primary key (lessonId, adminNo),
+  constraint lessonstudents_lesson_id_fk
+  foreign key (lessonId) references lesson (id)
+    on update cascade on delete cascade
 )
-  ENGINE = InnoDB;
+  engine=InnoDB
+;
 
-CREATE INDEX lessonstudents_user_adminNo_fk
-  ON lessonstudents (adminNo);
+create index lessonstudents_user_adminNo_fk
+  on lessonstudents (adminNo)
+;
 
-CREATE TABLE user
+create table user
 (
-  adminNo     CHAR(8)      NOT NULL
-    PRIMARY KEY,
-  username    VARCHAR(50)  NULL,
-  displayName VARCHAR(100) NULL,
-  CONSTRAINT user_username_uindex
-  UNIQUE (username)
+  adminNo char(8) not null
+    primary key,
+  username varchar(50) null,
+  displayName varchar(100) null,
+  constraint user_username_uindex
+  unique (username)
 )
-  ENGINE = InnoDB;
+  engine=InnoDB
+;
 
-ALTER TABLE event
-  ADD CONSTRAINT event_user_adminNo_fk
-FOREIGN KEY (creatorId) REFERENCES user (adminNo)
-  ON UPDATE CASCADE
-  ON DELETE CASCADE;
+alter table event
+  add constraint event_user_adminNo_fk
+foreign key (creatorId) references user (adminNo)
+  on update cascade on delete cascade
+;
 
-ALTER TABLE friend
-  ADD CONSTRAINT friend_ibfk_1
-FOREIGN KEY (originNode) REFERENCES user (adminNo);
+alter table friend
+  add constraint friend_ibfk_1
+foreign key (originNode) references user (adminNo)
+;
 
-ALTER TABLE friend
-  ADD CONSTRAINT friend_ibfk_2
-FOREIGN KEY (destNode) REFERENCES user (adminNo);
+alter table friend
+  add constraint friend_ibfk_2
+foreign key (destNode) references user (adminNo)
+;
 
-ALTER TABLE friendrequest
-  ADD CONSTRAINT friendrequest_ibfk_1
-FOREIGN KEY (requestee) REFERENCES user (adminNo);
+alter table friendrequest
+  add constraint friendrequest_ibfk_1
+foreign key (requestee) references user (adminNo)
+;
 
-ALTER TABLE friendrequest
-  ADD CONSTRAINT friendrequest_ibfk_2
-FOREIGN KEY (receiver) REFERENCES user (adminNo);
+alter table friendrequest
+  add constraint friendrequest_ibfk_2
+foreign key (receiver) references user (adminNo)
+;
 
-ALTER TABLE lessonstudents
-  ADD CONSTRAINT lessonstudents_user_adminNo_fk
-FOREIGN KEY (adminNo) REFERENCES user (adminNo)
-  ON UPDATE CASCADE
-  ON DELETE CASCADE;
+alter table lessonstudents
+  add constraint lessonstudents_user_adminNo_fk
+foreign key (adminNo) references user (adminNo)
+  on update cascade on delete cascade
+;
 
-CREATE TABLE userdevice
+create table userdevice
 (
-  adminNo  CHAR(8)       NOT NULL,
-  deviceId VARCHAR(1000) NOT NULL,
-  PRIMARY KEY (adminNo, deviceId),
-  CONSTRAINT userdevice_user_adminNo_fk
-  FOREIGN KEY (adminNo) REFERENCES user (adminNo)
-    ON UPDATE CASCADE
-    ON DELETE CASCADE
+  adminNo char(8) not null,
+  deviceId varchar(1000) not null,
+  primary key (adminNo, deviceId),
+  constraint userdevice_user_adminNo_fk
+  foreign key (adminNo) references user (adminNo)
+    on update cascade on delete cascade
 )
-  ENGINE = InnoDB;
+  engine=InnoDB
+;
 

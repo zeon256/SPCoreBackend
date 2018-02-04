@@ -48,7 +48,8 @@ class Firebase: TimerTask() {
         val currentTimeEpoch = Instant.now().toEpochMilli()
         val scheduleBlockSrc = ScheduleBlockSource()
 
-        val lesson = scheduleBlockSrc.checkLessonStartTimeAll(currentTimeEpoch)
+        val lesson =
+                scheduleBlockSrc.checkLessonStartTimeAll(currentTimeEpoch)
 
         lesson.forEach {
             // returns arrayList of devices to send to
