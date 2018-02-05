@@ -36,7 +36,7 @@ fun Route.event(path: String) = route("$path/event") {
     // get user's events
     get {
         val user = requireLogin()
-        when(user) {
+        when (user) {
             null -> call.respond(HttpStatusCode.Unauthorized, ErrorMsg("Missing JWT", MISSING_JWT))
             else -> {
                 val source = ScheduleBlockSource()
@@ -46,9 +46,9 @@ fun Route.event(path: String) = route("$path/event") {
     }
 
     // get events created by the user
-    get("myCreatedEvents"){
+    get("myCreatedEvents") {
         val user = requireLogin()
-        when(user){
+        when (user) {
             null -> call.respond(HttpStatusCode.Unauthorized, ErrorMsg("Missing JWT", MISSING_JWT))
             else -> {
                 call.respond(ScheduleBlockSource().getMyCreatedEvents(user))
@@ -68,7 +68,10 @@ fun Route.event(path: String) = route("$path/event") {
         val urlParams = call.parameters
 
         when (user) {
-            null -> call.respond(HttpStatusCode.Unauthorized, ErrorMsg("Missing JWT", MISSING_JWT))
+            null -> {
+                call.respond(HttpStatusCode.Unauthorized, ErrorMsg("Missing JWT", MISSING_JWT))
+                println("Missing JWT: GET lesson")
+            }
             else -> {
                 val source = ScheduleBlockSource()
 
@@ -80,29 +83,28 @@ fun Route.event(path: String) = route("$path/event") {
                 val endYYYYMM = urlParams["end"] ?: startYYYYMM
 
                 val startBounds =
-                        newCalendar(startYYYYMM.substring(0,4).toInt(), startYYYYMM.substring(4, 6).toInt() - 1, 1)
+                        newCalendar(startYYYYMM.substring(0, 4).toInt(), startYYYYMM.substring(4, 6).toInt() - 1, 1)
 
                 val endBounds =
-                        newCalendar(endYYYYMM.substring(0,4).toInt(), endYYYYMM.substring(4, 6).toInt() - 1, 1)
+                        newCalendar(endYYYYMM.substring(0, 4).toInt(), endYYYYMM.substring(4, 6).toInt() - 1, 1)
                                 .apply {
                                     set(Calendar.DAY_OF_MONTH, this.getActualMaximum(Calendar.DAY_OF_MONTH))
                                     setTimeAsDuration(Duration(days = 1) - Duration(millis = 0.001))
                                 }
                 println("$startYYYYMM & $endYYYYMM")
 
-                if (!forceRefresh){
+                if (!forceRefresh) {
                     // if not force refresh && not first time -> get from db{
                     val lessonsForFrontEnd = source.getLessons(user, startBounds.timeInMillis, endBounds.timeInMillis)
                     call.respond(lessonsForFrontEnd)
-                }
-                else {
+                } else {
                     val acadCalendar = getAcademicCalendarFromSP()
                     val lessons =
                             getTimeTableFromSpice(
                                     user.adminNo.substring(1, 8),
                                     acadCalendar.startOfSem,
                                     acadCalendar.endOfSem)
-                    lessons.forEach { source.insertLessons(it,user) }
+                    lessons.forEach { source.insertLessons(it, user) }
 
                     call.respond(lessons.filter {
                         it.startTime.toCalendar() isFrom startBounds to endBounds
@@ -126,7 +128,7 @@ fun Route.event(path: String) = route("$path/event") {
         val user = requireLogin()
         val form = call.receive<ValuesMap>()
 
-        when(user){
+        when (user) {
             null -> call.respond(HttpStatusCode.Unauthorized, ErrorMsg("Missing JWT", MISSING_JWT))
             else -> {
                 try {
@@ -140,14 +142,14 @@ fun Route.event(path: String) = route("$path/event") {
                     val source = ScheduleBlockSource()
 
                     val res = source.createEvent(event)
-                    if(res == 1)
+                    if (res == 1)
                         call.respond(event.id)
                     else
                         call.respond(HttpStatusCode.BadRequest, ErrorMsg("Make sure all fields are filled in", BAD_REQUEST))
 
-                }catch (e:NullPointerException){
+                } catch (e: NullPointerException) {
                     call.respond(HttpStatusCode.BadRequest, ErrorMsg("Make sure all fields are filled in", BAD_REQUEST))
-                }catch (e:SQLException){
+                } catch (e: SQLException) {
                     call.respond(HttpStatusCode.BadRequest, ErrorMsg("Duplicate found", DUPLICATE_FOUND))
                 }
             }
@@ -155,7 +157,7 @@ fun Route.event(path: String) = route("$path/event") {
     }
 
     //force notification
-    get("forceNotif"){
+    get("forceNotif") {
         val adminNo = "p1626175"
         val firebase = Firebase()
         val resCreateDeviceGrp = firebase.createDeviceGroup(adminNo,
@@ -164,14 +166,13 @@ fun Route.event(path: String) = route("$path/event") {
         var notifKey = ""
 
         //if NotifKey alr exist -> get NotifKey -> send Notif
-        notifKey = if(resCreateDeviceGrp.component2() != null)
+        notifKey = if (resCreateDeviceGrp.component2() != null)
             firebase.retrieveNotificationKey(adminNo).component1()!!.notification_key
         else
             resCreateDeviceGrp.component1().toString()
 
 
-        val sendNotif = ScheduleBlockSource().
-                getLessonById("03defcf5ddd055f95b1fc4934400334f")?.let { firebase.sendLessonNotification(notifKey, it) }
+        val sendNotif = ScheduleBlockSource().getLessonById("03defcf5ddd055f95b1fc4934400334f")?.let { firebase.sendLessonNotification(notifKey, it) }
 
         println(notifKey)
         println(sendNotif)
@@ -184,14 +185,14 @@ fun Route.event(path: String) = route("$path/event") {
         val user = requireLogin()
         val form = call.receive<ValuesMap>()
 
-        when(user){
+        when (user) {
             null -> call.respond(HttpStatusCode.Unauthorized, ErrorMsg("Missing JWT", MISSING_JWT))
             else -> {
                 try {
                     val eventId = form["eventId"]
                     val userSource = AuthSource()
                     val scheduleSource = ScheduleBlockSource()
-                    if(eventId.isNullOrBlank())
+                    if (eventId.isNullOrBlank())
                         call.respond(HttpStatusCode.BadRequest, ErrorMsg("Event Id missing!", BAD_REQUEST))
                     else {
                         val invitedGuestAdminNo = form["invitedGuestAdminNo"].toUserList()
@@ -205,9 +206,11 @@ fun Route.event(path: String) = route("$path/event") {
 
                             // Get user based on adminNumbers that are in invitedGuestAdminNo
                             // if user adds their own adminNo it will automatically be discarded
-                            invitedGuestAdminNo?.forEach { userSource.getUserById(it)?.let {
-                                it1 -> if(it1.adminNo != user.adminNo ) invitedGuest.add(it1)
-                            } }
+                            invitedGuestAdminNo?.forEach {
+                                userSource.getUserById(it)?.let { it1 ->
+                                    if (it1.adminNo != user.adminNo) invitedGuest.add(it1)
+                                }
+                            }
 
                             // return guest that was successfully invited
                             // to show that people that have been added
@@ -215,7 +218,7 @@ fun Route.event(path: String) = route("$path/event") {
                             val succesfullyInvitedGuest = ArrayList<String>()
 
                             invitedGuest.forEach {
-                                val res = scheduleSource.invitePeople(eventId,it)
+                                val res = scheduleSource.invitePeople(eventId, it)
                                 if (res == 1)
                                     succesfullyInvitedGuest.add(it.adminNo)
                             }
@@ -224,7 +227,7 @@ fun Route.event(path: String) = route("$path/event") {
                         }
                     }
 
-                }catch (e: SQLException){
+                } catch (e: SQLException) {
                     call.respond(HttpStatusCode.BadRequest, ErrorMsg("Make sure all fields are filled in", BAD_REQUEST))
                 }
 
@@ -238,19 +241,19 @@ fun Route.event(path: String) = route("$path/event") {
         val form = call.receive<ValuesMap>()
         val eventId = form["eventId"]
 
-        when(user){
+        when (user) {
             null -> call.respond(HttpStatusCode.Unauthorized, ErrorMsg("Missing JWT", MISSING_JWT))
             else -> {
                 // first check if event is created by the same user
                 val source = ScheduleBlockSource()
-                if(eventId.isNullOrBlank())
+                if (eventId.isNullOrBlank())
                     call.respond(HttpStatusCode.BadRequest, ErrorMsg("Event Id missing!", BAD_REQUEST))
                 else {
                     val event = source.getEvent(eventId!!)
 
-                    if(event?.creator?.adminNo != user.adminNo){
+                    if (event?.creator?.adminNo != user.adminNo) {
                         call.respond(HttpStatusCode.Unauthorized, ErrorMsg("$user is not event host!", NOT_EVENT_HOST))
-                    }else {
+                    } else {
                         val updatedEvent = Event(
                                 event.id,
                                 form["title"].toString(),
@@ -260,7 +263,7 @@ fun Route.event(path: String) = route("$path/event") {
                                 user
                         )
                         val res = source.updateEvent(updatedEvent)
-                        if(res == 0)
+                        if (res == 0)
                             call.respond(HttpStatusCode.BadRequest, ErrorMsg("Bad Request!", BAD_REQUEST))
                         else
                             call.respond("Succesfully updated ${event.id}")
@@ -269,8 +272,8 @@ fun Route.event(path: String) = route("$path/event") {
                 }
 
             }
-    }
         }
+    }
 
     // delete events
     delete {
@@ -278,21 +281,21 @@ fun Route.event(path: String) = route("$path/event") {
         val form = call.receive<ValuesMap>()
         val eventId = form["eventId"]
 
-        when(user){
+        when (user) {
             null -> call.respond(HttpStatusCode.Unauthorized, ErrorMsg("Missing JWT", MISSING_JWT))
             else -> {
                 // first check if event is created by the same user
                 val source = ScheduleBlockSource()
-                if(eventId.isNullOrBlank())
+                if (eventId.isNullOrBlank())
                     call.respond(HttpStatusCode.BadRequest, ErrorMsg("Event Id missing!", BAD_REQUEST))
                 else {
                     val event = source.getEvent(eventId!!)
 
-                    if(event?.creator?.adminNo != user.adminNo){
+                    if (event?.creator?.adminNo != user.adminNo) {
                         call.respond(HttpStatusCode.Unauthorized, ErrorMsg("$user is not event host!", NOT_EVENT_HOST))
-                    }else {
+                    } else {
                         val res = source.deleteEvent(eventId)
-                        if(res == 0)
+                        if (res == 0)
                             call.respond(HttpStatusCode.BadRequest, ErrorMsg("Bad Request!", BAD_REQUEST))
                         else
                             call.respond("Succesfully deleted ${event.id} and all guest has been uninvited from the event.")
@@ -304,7 +307,7 @@ fun Route.event(path: String) = route("$path/event") {
     }
 
     // DeletedEvent, Going, NotGoing
-    post("attendance"){
+    post("attendance") {
         // depending on the input -> call diff sql fn
         // -1 -> deleted invite
         // 0 -> not going
@@ -315,10 +318,10 @@ fun Route.event(path: String) = route("$path/event") {
         val eventId = form["eventId"].toString()
         val attendance = form["attendance"].toString()
 
-        when(user){
+        when (user) {
             null -> call.respond(HttpStatusCode.Unauthorized, ErrorMsg("Missing JWT", MISSING_JWT))
             else -> {
-                if(eventId.isBlank())
+                if (eventId.isBlank())
                     call.respond(HttpStatusCode.BadRequest, ErrorMsg("Event Id missing!", BAD_REQUEST))
                 else {
                     val source = ScheduleBlockSource()
@@ -329,20 +332,20 @@ fun Route.event(path: String) = route("$path/event") {
                     // first check haventrespond table
                     // second check going table
                     // third check isNotGoing table
-                    when(attendance){
-                        "0" -> res = source.createAttendance(user,eventId,attendance)
-                        "1" -> res = source.createAttendance(user,eventId,attendance)
-                        "-1" -> res = source.createAttendance(user,eventId,attendance)
+                    when (attendance) {
+                        "0" -> res = source.createAttendance(user, eventId, attendance)
+                        "1" -> res = source.createAttendance(user, eventId, attendance)
+                        "-1" -> res = source.createAttendance(user, eventId, attendance)
                         else -> call.respond(HttpStatusCode.BadRequest, ErrorMsg("Invalid event attendance code!", BAD_REQUEST))
                     }
-                    if(res){
-                        val pair = HashMap<String,String>()
-                        pair.put("0","not going")
-                        pair.put("1","going")
-                        pair.put("-1","deleted Invite")
+                    if (res) {
+                        val pair = HashMap<String, String>()
+                        pair.put("0", "not going")
+                        pair.put("1", "going")
+                        pair.put("-1", "deleted Invite")
 
                         call.respond("You have executed ${pair[attendance]}!")
-                    }else {
+                    } else {
                         call.respond(
                                 ErrorMsg("Database Error", DATABASE_ERROR))
                     }
@@ -365,14 +368,16 @@ fun Route.event(path: String) = route("$path/event") {
 fun getTimeTableFromSpice(
         adminNo: String,
         startDay: Calendar =
-            Calendar.getInstance().startOfDay().apply {
-                set(Calendar.DAY_OF_MONTH, 1)
-            },
+        Calendar.getInstance().startOfDay().apply {
+            set(Calendar.DAY_OF_MONTH, 1)
+        },
         endDay: Calendar =
-            Calendar.getInstance().startOfDay().apply {
-                set(Calendar.DAY_OF_MONTH, this.getActualMaximum(Calendar.DAY_OF_MONTH))
-            }
+        Calendar.getInstance().startOfDay().apply {
+            set(Calendar.DAY_OF_MONTH, this.getActualMaximum(Calendar.DAY_OF_MONTH))
+        }
 ): ArrayList<TimeTable.Lesson> {
+
+    println("getTimeTableFromSpice called")
 
     val targetDateFormat = SimpleDateFormat("ddMMyy")
     val arrListOfLesson = ArrayList<TimeTable.Lesson>()
@@ -422,6 +427,7 @@ fun getTimeTableFromSpice(
 
     return arrListOfLesson
 }
+
 private fun String?.toUserList(): List<String>? = when (this.isNullOrBlank()) {
     true -> null
     else -> ArrayList<String>(this
@@ -430,7 +436,7 @@ private fun String?.toUserList(): List<String>? = when (this.isNullOrBlank()) {
             .toList()
 }
 
-fun getAcademicCalendarFromSP() : AcademicCalendar {
+fun getAcademicCalendarFromSP(): AcademicCalendar {
     return AcademicCalendar(newCalendar(2017, 9, 16), newCalendar(2018, 2, 2))
 }
 
